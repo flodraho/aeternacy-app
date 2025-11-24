@@ -1,0 +1,9 @@
+{
+  "name": "æternacy™ private beta",
+  "description": "æternacy™ is an innovative platform to digitally preserve and re-experience personal life stories. At its core are two seamlessly integrated AI components: æterny, the personal AI curator who empathically helps users collect and organize memories, and the AI Experience Creator, which generates vivid media experiences like slideshows, videos, or even VR scenes from these curated memories.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
