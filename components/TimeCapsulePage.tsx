@@ -20,7 +20,6 @@ type CapsuleState = 'selecting' | 'generating' | 'viewing';
 
 const TimeCapsulePage: React.FC<TimeCapsulePageProps> = ({ moments, onBack, triggerConfirmation, userTier, onNavigate }) => {
   const [state, setState] = useState<CapsuleState>('selecting');
-  // FIX: Changed selectedMomentIds state to handle strings to match Moment.id type.
   const [selectedMomentIds, setSelectedMomentIds] = useState<Set<string>>(new Set());
   const [legacyLetter, setLegacyLetter] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -31,13 +30,11 @@ const TimeCapsulePage: React.FC<TimeCapsulePageProps> = ({ moments, onBack, trig
       name: "For Julia's 18th Birthday", 
       openDate: 'October 23, 2035', 
       recipient: 'julia.doe@example.com', 
-      // FIX: Changed momentIds to be strings.
       momentIds: ['2', '7'], 
       status: 'Active' 
     }
   ]);
 
-  // FIX: Changed id to be a string.
   const handleToggleMoment = (id: string) => {
     setSelectedMomentIds(prev => {
       const newSet = new Set(prev);
@@ -55,7 +52,6 @@ const TimeCapsulePage: React.FC<TimeCapsulePageProps> = ({ moments, onBack, trig
       setState('generating');
       setError(null);
       try {
-        // FIX: The filter will now work correctly with string IDs.
         const selectedMoments = moments.filter(m => selectedMomentIds.has(m.id));
         const letter = await createLegacyLetter(selectedMoments);
         setLegacyLetter(letter);
@@ -73,7 +69,6 @@ const TimeCapsulePage: React.FC<TimeCapsulePageProps> = ({ moments, onBack, trig
     triggerConfirmation(TOKEN_COSTS.TIME_CAPSULE_SEAL, 'TIME_CAPSULE_SEAL', executeGeneration);
   };
 
-  // FIX: The filter will now work correctly with string IDs.
   const selectedMoments = moments.filter(m => selectedMomentIds.has(m.id));
 
   if (userTier !== 'legacy') {
@@ -146,19 +141,15 @@ const TimeCapsulePage: React.FC<TimeCapsulePageProps> = ({ moments, onBack, trig
               {moments.map(moment => (
                 <button 
                   key={moment.id} 
-                  // FIX: Pass string id to handler.
                   onClick={() => handleToggleMoment(moment.id)}
-                  // FIX: Pass string id to handler.
                   className={`aspect-square rounded-lg overflow-hidden group relative text-left transition-all duration-300 ${selectedMomentIds.has(moment.id) ? 'transform scale-95' : ''}`}
                 >
                   <img src={moment.image || moment.images?.[0]} alt={moment.title} className="w-full h-full object-cover" />
-                  {/* FIX: Pass string id to handler. */}
                   <div className={`absolute inset-0 bg-black transition-opacity ${selectedMomentIds.has(moment.id) ? 'opacity-60' : 'opacity-40 group-hover:opacity-20'}`}></div>
                   <div className="absolute inset-0 p-3 flex flex-col justify-end">
                     <h3 className="font-bold text-white text-sm leading-tight">{moment.title}</h3>
                     <p className="text-xs text-slate-400">{moment.date}</p>
                   </div>
-                  {/* FIX: Pass string id to handler. */}
                   {selectedMomentIds.has(moment.id) && (
                     <div className="absolute top-2 right-2 w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center ring-4 ring-slate-900">
                       <CheckCircle className="w-5 h-5 text-white" />

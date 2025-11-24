@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Moment, AeternyVoice, AeternyStyle, UserTier, Page } from '../types';
 import Slideshow from './Slideshow';
@@ -18,7 +16,7 @@ interface MomentDetailPageProps {
     aeternyVoice: AeternyVoice;
     aeternyStyle: AeternyStyle;
     onEditMoment: (moment: Moment) => void;
-    onDeleteMoment: (id: number) => void;
+    onDeleteMoment: (id: string) => void;
     userTier: UserTier;
     onNavigate: (page: Page) => void;
 }
@@ -94,11 +92,7 @@ const MomentDetailPage: React.FC<MomentDetailPageProps> = ({ moment, onBack, onU
     
     const handleDelete = () => {
         if (window.confirm('Are you sure you want to permanently delete this momænt? This action cannot be undone.')) {
-            // First, trigger the deletion process in the parent state.
-            // This will set `deletingMomentId`.
             onDeleteMoment(moment.id);
-            // Then, immediately navigate back. React will batch these updates,
-            // so the collection page renders with the `deletingMomentId` already set.
             onBack();
         }
     };

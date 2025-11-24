@@ -47,7 +47,11 @@ export async function generateFirstMomentDetails(
         }
     });
 
-    return JSON.parse(response.text.trim());
+    const text = response.text;
+    if (!text) {
+        throw new Error("AI response was empty.");
+    }
+    return JSON.parse(text);
 }
 
 export async function createStoryFromImages(images: {data: string, mimeType: string}[]): Promise<{title: string, story: string, tags: {location:string[], people: string[], activities: string[]}}> {
@@ -83,8 +87,12 @@ export async function createStoryFromImages(images: {data: string, mimeType: str
             },
         }
     });
-
-    return JSON.parse(response.text.trim());
+    
+    const text = response.text;
+    if (!text) {
+        throw new Error("AI response was empty.");
+    }
+    return JSON.parse(text);
 }
 
 export async function rewriteStory(originalStory: string, prompt: string): Promise<string> {
@@ -96,7 +104,7 @@ export async function rewriteStory(originalStory: string, prompt: string): Promi
         model: 'gemini-2.5-flash',
         contents: fullPrompt
     });
-    return response.text;
+    return response.text || '';
 }
 
 export async function createLegacyLetter(moments: Moment[]): Promise<string> {
@@ -116,7 +124,7 @@ export async function createLegacyLetter(moments: Moment[]): Promise<string> {
             thinkingConfig: { thinkingBudget: 4096 }
         }
     });
-    return response.text;
+    return response.text || '';
 }
 
 export async function weaveRitualStory(moments: Moment[]): Promise<string> {
@@ -135,7 +143,7 @@ export async function weaveRitualStory(moments: Moment[]): Promise<string> {
             thinkingConfig: { thinkingBudget: 2048 }
         }
     });
-    return response.text;
+    return response.text || '';
 }
 
 export async function textToSpeech(
@@ -193,7 +201,7 @@ export async function checkImageForMinors(image: { data: string, mimeType: strin
         model: 'gemini-2.5-flash',
         contents: { parts: [{ text: "Does this image contain a person who appears to be a minor (under 18)? Answer only 'Yes' or 'No'." }, { inlineData: image }] }
     });
-    return response.text.toLowerCase().includes('yes');
+    return (response.text || '').toLowerCase().includes('yes');
 }
 
 export async function createDemoStoryFromImages(images: { data: string, mimeType: string }[]): Promise<{ title: string; story: string; tags: { location: string[]; people: string[]; activities: string[] } }> {
@@ -210,29 +218,26 @@ export async function startBiographerTextChat(topic: string): Promise<{ chat: Ch
 
     const chat = ai.chats.create({ model: 'gemini-3-pro-preview', config: { systemInstruction } });
     const response = await chat.sendMessage({ message: "Start the interview." });
-    return { chat, initialMessage: response.text };
+    return { chat, initialMessage: response.text || '' };
 }
 
 export async function startAeternyChat(aeternyStyle: AeternyStyle, userTier: UserTier): Promise<{ chat: Chat, initialMessage: string }> {
     const systemInstruction = getGenericAeternySystemInstruction(aeternyStyle, userTier);
     const chat = ai.chats.create({ model: 'gemini-2.5-flash', config: { systemInstruction } });
     const response = await chat.sendMessage({ message: "Give a brief, friendly greeting." });
-    return { chat, initialMessage: response.text };
+    return { chat, initialMessage: response.text || '' };
 }
 
 export async function continueAeternyChat(chat: Chat, message: string): Promise<string> {
     const response = await chat.sendMessage({ message });
-    return response.text;
+    return response.text || '';
 }
 
 export const getGenericAeternySystemInstruction = (aeternyStyle: AeternyStyle, userTier: UserTier) => {
     return `You are æterny, a personal AI curator for a memory platform. Your personality is ${aeternyStyle}. You are helpful and concise. The user's subscription tier is ${userTier}. Be aware of features available to them but do not oversell.`;
 };
 
-// --- Re-implement other functions as needed ---
 export const createMomentFromRecording = async (transcribedText: string, capturedImages: { data: string, mimeType: string }[], location: GeolocationCoordinates | null): Promise<{ title: string; story: string; tags: { location: string[]; people: string[]; activities: string[] } }> => {
-    // This is a complex function that would combine multiple AI calls.
-    // For this client-side version, we'll simplify it.
     let prompt = `Analyze the following transcribed audio and images from a recorded moment. Create a title, a short story, and tags.
     Transcription: "${transcribedText}"
     ${location ? `Location: Lat ${location.latitude}, Lon ${location.longitude}` : ''}
@@ -243,9 +248,13 @@ export const createMomentFromRecording = async (transcribedText: string, capture
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts: [{ text: prompt }, ...imageParts] },
-        config: { responseMimeType: "application/json", /* Schema */ }
+        config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text.trim());
+    const text = response.text;
+    if (!text) {
+        throw new Error("AI response was empty.");
+    }
+    return JSON.parse(text);
 };
 
 export const imageUrlToPayload = async (url: string): Promise<{ data: string; mimeType: string }> => {
@@ -292,9 +301,13 @@ export async function analyzeImageForCuration(data: string, mimeType: string): P
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts: [{text: prompt}, {inlineData: {data, mimeType}}] },
-        config: { responseMimeType: 'application/json' /* Schema */ }
+        config: { responseMimeType: 'application/json' }
     });
-    return JSON.parse(response.text.trim());
+    const text = response.text;
+    if (!text) {
+        throw new Error("AI response was empty.");
+    }
+    return JSON.parse(text);
 }
 
 export async function generateImage(prompt: string): Promise<string> {
@@ -319,7 +332,7 @@ export async function generateVideoScript(item: Moment | Journey, style: Aeterny
         model: 'gemini-2.5-flash',
         contents: prompt
     });
-    return response.text;
+    return response.text || '';
 }
 
 export async function createMomentFromVoiceOnly(audio: { data: string; mimeType: string }): Promise<{ title: string; story: string; tags: any; imagePrompt: string }> {
@@ -332,10 +345,13 @@ export async function createMomentFromVoiceOnly(audio: { data: string; mimeType:
         config: {
             responseMimeType: "application/json",
             thinkingConfig: { thinkingBudget: 4096 },
-            /* Schema */
         }
     });
-    return JSON.parse(response.text.trim());
+    const text = response.text;
+    if (!text) {
+        throw new Error("AI response was empty.");
+    }
+    return JSON.parse(text);
 }
 
 export async function scanPhysicalPhoto(image: { data: string; mimeType: string }): Promise<{ decade: string; context: string; handwrittenNotes: string }> {
@@ -348,9 +364,13 @@ export async function scanPhysicalPhoto(image: { data: string; mimeType: string 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: { parts: [{ text: prompt }, { inlineData: image }] },
-    config: { responseMimeType: "application/json", /* Schema */ }
+    config: { responseMimeType: "application/json" }
   });
-  return JSON.parse(response.text.trim());
+  const text = response.text;
+  if (!text) {
+      throw new Error("AI response was empty.");
+  }
+  return JSON.parse(text);
 }
 
 export async function generateLegacyStatement(userName: string): Promise<string> {
@@ -363,10 +383,9 @@ export async function generateLegacyStatement(userName: string): Promise<string>
       contents: prompt,
       config: { thinkingConfig: { thinkingBudget: 2048 } }
   });
-  return response.text;
+  return response.text || '';
 }
 
-// Live API functions remain client-side as they require direct WebSocket connections
 export const startOralHistorySession = async (
     topic: string, 
     callbacks: { onMessage: (message: LiveServerMessage) => void; onError: (e: ErrorEvent) => void; onClose: (e: CloseEvent) => void }
@@ -380,7 +399,7 @@ export const startOralHistorySession = async (
     const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
-            onopen: () => {}, // onopen will be handled by the component to start audio stream
+            onopen: () => {},
             onmessage: callbacks.onMessage,
             onerror: callbacks.onError,
             onclose: callbacks.onClose,

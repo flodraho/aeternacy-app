@@ -25,7 +25,6 @@ esbuild.build({
   target: ['es2020'],
   define: {
     'process.env.API_KEY': `"${process.env.API_KEY}"`,
-    'process.env.GOOGLE_CLIENT_ID': `"${process.env.GOOGLE_CLIENT_ID}"`,
   },
   loader: {
       '.tsx': 'tsx'

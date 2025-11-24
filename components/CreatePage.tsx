@@ -64,11 +64,10 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
     const [promptInput, setPromptInput] = useState('');
     const [newTag, setNewTag] = useState({ location: '', people: '', activities: '' });
 
-    const hasTriggeredGeneration = useRef(false);
+    const generationTriggerRef = useRef<boolean>(false);
     const isRitualContribution = !!ritualContextId;
 
      useEffect(() => {
-        // Clear context when component unmounts (e.g., user navigates away without creating)
         return () => {
             if (isRitualContribution) {
                 onClearRitualContext();
@@ -79,7 +78,9 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
     const imageLimit = useMemo(() => {
         switch (userTier) {
             case 'legacy': return 20;
-            case 'fæmily': return 10;
+            case 'fæmily':
+            case 'fæmilyPlus':
+                 return 10;
             case 'essæntial': return 10;
             case 'free': return 5;
             default: return 5;
@@ -89,10 +90,10 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
     const photoCountExceeded = selectedFiles.length > imageLimit;
 
     const processFiles = useCallback(async (files: FileList) => {
-        const newFilesPromises = Array.from(files).map(async (file): Promise<SelectedFile> => ({
+        const newFilesPromises = Array.from(files).slice(0, imageLimit - selectedFiles.length).map(async (file): Promise<SelectedFile> => ({
             id: `${file.name}-${file.lastModified}-${Math.random()}`,
             file,
-            preview: await fileToDataUrl(file), // Use persistent data URL
+            preview: await fileToDataUrl(file),
             status: 'uploading',
             isHeader: false,
         }));
@@ -107,14 +108,13 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
             return combined;
         });
         setGeneratedContent(null);
-        hasTriggeredGeneration.current = false;
-    }, []);
+        generationTriggerRef.current = false;
+    }, [imageLimit, selectedFiles.length]);
     
     const handleGenerateStory = useCallback(async () => {
-        // Prevent generation if already generating, triggered, or no files.
-        if (!selectedFiles.length || isGenerating || hasTriggeredGeneration.current) return;
+        if (!selectedFiles.length || isGenerating || generationTriggerRef.current) return;
     
-        hasTriggeredGeneration.current = true;
+        generationTriggerRef.current = true;
         setIsGenerating(true);
         setGeneratedContent(null);
     
@@ -158,9 +158,8 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
             return () => clearTimeout(timer);
         }
         
-        // Trigger generation only when all files are 'complete' and we haven't triggered yet for this set
         const allComplete = selectedFiles.length > 0 && selectedFiles.every(f => f.status === 'complete');
-        if (allComplete && !hasTriggeredGeneration.current) {
+        if (allComplete && !generationTriggerRef.current) {
             handleGenerateStory();
         }
 
@@ -183,14 +182,12 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
     const handleRemoveFile = (id: string) => {
         setSelectedFiles(prev => {
             const remaining = prev.filter(f => f.id !== id);
-            // If the removed file was the header, and there are files left, assign a new header
             if (prev.find(f => f.id === id)?.isHeader && remaining.length > 0) {
                 remaining[0].isHeader = true;
             }
             return remaining;
         });
-        // Allow regeneration if files change significantly, though we handle this by user request mostly
-        hasTriggeredGeneration.current = false; 
+        generationTriggerRef.current = false; 
     };
 
     const handleSetHeader = (id: string) => setSelectedFiles(prev => prev.map(f => ({ ...f, isHeader: f.id === id })));
@@ -241,41 +238,6 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
         } : null);
     };
 
-    const TagEditor: React.FC<{
-        category: keyof GeneratedContent['tags'];
-        icon: React.ElementType;
-        placeholder: string;
-    }> = ({ category, icon: Icon, placeholder }) => {
-        const handleAdd = (e: React.FormEvent) => {
-            e.preventDefault();
-            handleAddTag(category);
-        };
-    
-        return (
-            <div>
-                <div className="flex flex-wrap items-center gap-2">
-                    {generatedContent?.tags[category].map(tag => (
-                        <span key={tag} className="flex items-center gap-1.5 bg-gray-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
-                            <Icon className="w-3.5 h-3.5"/>
-                            {tag}
-                            <button onClick={() => handleRemoveTag(category, tag)} className="text-slate-500 hover:text-white"><X size={12}/></button>
-                        </span>
-                    ))}
-                </div>
-                <form onSubmit={handleAdd} className="flex items-center gap-2 mt-2">
-                    <input
-                        type="text"
-                        value={newTag[category]}
-                        onChange={e => setNewTag(prev => ({ ...prev, [category]: e.target.value }))}
-                        placeholder={placeholder}
-                        className="flex-grow bg-slate-900/50 border border-slate-700 rounded-full py-1.5 px-3 text-sm text-white placeholder-slate-500 focus:ring-cyan-500 focus:border-cyan-500 outline-none"
-                    />
-                </form>
-            </div>
-        );
-    };
-
-
     const handleCreateMomentClick = () => {
         if (!generatedContent || !selectedFiles.length || photoCountExceeded) return;
 
@@ -304,6 +266,30 @@ const CreatePage: React.FC<CreatePageProps> = (props) => {
     
     const allUploadsComplete = selectedFiles.length > 0 && selectedFiles.every(f => f.status === 'complete');
     
+    // FIX: Defined the missing TagEditor component.
+    const TagEditor: React.FC<{ category: keyof GeneratedContent['tags'], icon: React.ElementType, placeholder: string }> = ({ category, icon: Icon, placeholder }) => (
+        <div>
+            <div className="flex flex-wrap items-center gap-2">
+                {generatedContent?.tags[category].map(tag => (
+                    <span key={tag} className="flex items-center gap-1.5 bg-gray-700 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+                        <Icon className="w-3.5 h-3.5"/>
+                        {tag}
+                        <button onClick={() => handleRemoveTag(category, tag)} className="text-slate-500 hover:text-white"><X size={12}/></button>
+                    </span>
+                ))}
+                 <form onSubmit={(e) => { e.preventDefault(); handleAddTag(category); }} className="flex-grow">
+                    <input
+                        type="text"
+                        value={newTag[category]}
+                        onChange={(e) => setNewTag(prev => ({...prev, [category]: e.target.value}))}
+                        placeholder={placeholder}
+                        className="bg-transparent text-xs text-slate-300 focus:outline-none w-full min-w-[80px]"
+                    />
+                </form>
+            </div>
+        </div>
+    );
+
     return (
         <div className="container mx-auto px-6 pt-28 pb-8">
             <div className="mb-8">

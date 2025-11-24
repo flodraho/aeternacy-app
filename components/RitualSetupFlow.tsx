@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { RitualTemplate, ActiveRitual } from '../types';
 import { X, Users, Calendar, CheckCircle } from 'lucide-react';
@@ -28,7 +27,6 @@ const RitualSetupFlow: React.FC<RitualSetupFlowProps> = ({ template, familyMembe
     };
 
     const handleFinalize = () => {
-        // FIX: Replaced dynamic `require` with `template.iconName` which is passed from the parent.
         onComplete({
             templateId: template.id,
             title: template.title,

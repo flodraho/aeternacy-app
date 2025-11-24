@@ -9,7 +9,6 @@ interface TheaterPageProps {
   moments: Moment[];
   aeternyVoice: AeternyVoice;
   onExit: () => void;
-  // FIX: Changed startingMomentId to string to match Moment.id type.
   startingMomentId?: string | null;
 }
 
@@ -25,13 +24,11 @@ const TheaterPage: React.FC<TheaterPageProps> = ({ moments, aeternyVoice, onExit
   const slideDurationWithoutNarration = 10000; // 10 seconds
 
   const playableMoments = useMemo(() => {
-    // FIX: Filter out non-standard moments and also ensure they have an image to display.
     return moments.filter(m => (m.type === 'standard' || m.type === 'focus') && (m.image || (m.images && m.images.length > 0))).sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   }, [moments]);
   
   const initialIndex = useMemo(() => {
     if (startingMomentId != null) {
-      // FIX: Comparison will now work correctly with string IDs.
       const index = playableMoments.findIndex(m => m.id === startingMomentId);
       return index > -1 ? index : 0;
     }

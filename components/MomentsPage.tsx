@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Moment, Page, Journey, UserTier } from '../types';
 import GridView from './GridView';
@@ -9,15 +10,15 @@ import Tooltip from './Tooltip';
 interface MomentsPageProps {
     moments: Moment[];
     journeys: Journey[];
-    onCreateJourney: (title: string, description: string, momentIds: number[]) => void;
-    onPinToggle: (id: number) => void;
+    onCreateJourney: (title: string, description: string, momentIds: string[]) => void;
+    onPinToggle: (id: string) => void;
     onSelectMoment: (moment: Moment) => void;
     onItemUpdate: (item: Moment | Journey) => void;
     onShareToFamily: (item: Moment | Journey) => void;
     userTier: UserTier;
     onNavigate: (page: Page) => void;
-    newMomentId?: number | null;
-    deletingMomentId?: number | null;
+    newMomentId?: string | null;
+    deletingMomentId?: string | null;
     showGuide?: boolean;
     onCloseGuide?: () => void;
 }
@@ -56,7 +57,7 @@ const ExpandedJourneyView: React.FC<{
     moments: Moment[];
     onBack: () => void;
     onSelectMoment: (moment: Moment) => void;
-    onPinToggle: (id: number) => void;
+    onPinToggle: (id: string) => void;
     onShare: (moment: Moment) => void;
     onNavigate: (page: Page) => void;
 }> = ({ journey, moments, onBack, onSelectMoment, onPinToggle, onShare, onNavigate }) => {
@@ -86,7 +87,7 @@ const MomentsPage: React.FC<MomentsPageProps> = ({ moments, journeys, onCreateJo
     const [shareTarget, setShareTarget] = useState<Moment | Journey | null>(null);
     const [mode, setMode] = useState<CollectionMode>('moments');
     const [isSelecting, setIsSelecting] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [journeyTitle, setJourneyTitle] = useState('');
     const [journeyDescription, setJourneyDescription] = useState('');
@@ -119,7 +120,7 @@ const MomentsPage: React.FC<MomentsPageProps> = ({ moments, journeys, onCreateJo
             }
         }
         
-        return []; // Return empty for journeys mode as it has its own render logic
+        return [];
     }, [moments, mode, currentUserId, filterMode]);
     
     const momentsWithTeaser = useMemo(() => {
@@ -127,12 +128,10 @@ const MomentsPage: React.FC<MomentsPageProps> = ({ moments, journeys, onCreateJo
             return displayedMoments;
         }
     
-        // FIX: Filter out the full versions of insight/family cards for free users to avoid duplicates
         let newMoments = displayedMoments.filter(m => m.type !== 'insight' && m.type !== 'fæmilyStoryline');
     
-        // Add Family Storyline Teaser at the beginning
         const familyTeaserMoment: Moment = {
-            id: -2,
+            id: '-2',
             type: 'fæmilyStoryline',
             aiTier: null,
             pinned: false,
@@ -142,13 +141,9 @@ const MomentsPage: React.FC<MomentsPageProps> = ({ moments, journeys, onCreateJo
         };
         newMoments.unshift(familyTeaserMoment);
     
-        // Add Data Insights Teaser (existing logic)
-        // Note: The original logic used `displayedMoments.length > 2`. 
-        // We should use the length of actual user moments.
-        // `newMoments` at this point only has user moments + the family teaser.
         if (displayedMoments.filter(m => m.type === 'standard' || m.type === 'focus').length > 2) {
             const insightTeaserMoment: Moment = {
-                id: -1,
+                id: '-1',
                 type: 'insight',
                 aiTier: null,
                 pinned: false,
@@ -160,7 +155,6 @@ const MomentsPage: React.FC<MomentsPageProps> = ({ moments, journeys, onCreateJo
                     period: 'Upgrade to Unlock'
                 }
             };
-            // Splice after the 4th item (3 user moments + family teaser). The original logic was `splice(4,...)` after `unshift`.
             newMoments.splice(4, 0, insightTeaserMoment);
         }
         
@@ -183,7 +177,7 @@ const MomentsPage: React.FC<MomentsPageProps> = ({ moments, journeys, onCreateJo
         setSelectedIds(new Set());
     };
 
-    const handleToggleSelection = (momentId: number) => {
+    const handleToggleSelection = (momentId: string) => {
         setSelectedIds(prev => {
             const newSet = new Set(prev);
             if (newSet.has(momentId)) newSet.delete(momentId);
