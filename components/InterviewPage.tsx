@@ -59,6 +59,7 @@ const FirstMomentCard: React.FC<FirstMomentCardProps> = ({ moment }) => (
 
 
 interface InterviewPageProps {
+  // FIX: Changed newMomentId to string to match Moment.id type.
   onComplete: (newMomentId?: string) => void;
   aeternyAvatar: string | null;
   aeternyVoice: AeternyVoice;

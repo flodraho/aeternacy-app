@@ -1,9 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Page, UserTier, Message } from '../types';
 import { ArrowLeft, BookText, Briefcase, GitBranch, HeartCrack, Mic, Users, X, Send, Loader2 } from 'lucide-react';
 import { TOKEN_COSTS } from '../services/costCatalog';
 import Tooltip from './Tooltip';
 import LegacyLandingPage from './LegacyLandingPage';
+// FIX: Corrected function name to startBiographerTextChat as startBiographerChat is not exported.
 import { startBiographerTextChat, continueAeternyChat } from '../services/geminiService';
 import { Chat } from '@google/genai';
 

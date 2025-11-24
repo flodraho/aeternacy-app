@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Page, UserTier } from '../types';
 import { ArrowLeft, UploadCloud, Sparkles, FolderCheck, CheckCircle, Loader2 } from 'lucide-react';

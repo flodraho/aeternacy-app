@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Page, UserTier, Moment } from '../types';
-import { Users, LayoutGrid, UserPlus, GitBranch, MessageSquare, Edit, Trash2, Eye, X, GitMerge } from 'lucide-react';
+import { Users, LayoutGrid, UserPlus, GitBranch, MessageSquare, Edit, Trash2, Eye, X } from 'lucide-react';
 import { fetchPexelsImages } from '../services/pexelsService';
 import ChevronDoubleDownIcon from './icons/ChevronDoubleDownIcon';
 
@@ -29,10 +29,12 @@ interface FamilySpacePageProps {
 const FamilySpacePage: React.FC<FamilySpacePageProps> = ({ onNavigate, userTier, moments, onSelectMoment, onPinToggle, onUpdateMoment, onEditMoment, onDeleteMoment, deletingMomentId }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [backgrounds, setBackgrounds] = useState(staticFamilyBackgrounds);
+  // FIX: Changed selectedMomentId to be a string to match Moment.id type.
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
 
   const selectedMoment = useMemo(() => {
     if (!selectedMomentId) return null;
+    // FIX: This comparison will now work correctly with string IDs.
     return moments.find(m => m.id === selectedMomentId);
   }, [selectedMomentId, moments]);
 
@@ -66,6 +68,7 @@ const FamilySpacePage: React.FC<FamilySpacePageProps> = ({ onNavigate, userTier,
     }
   };
   
+  // FIX: Changed momentId to be a string.
   const handleSelectFeaturedMoment = (momentId: string) => {
     setSelectedMomentId(prevId => prevId === momentId ? null : momentId);
   };
@@ -73,6 +76,7 @@ const FamilySpacePage: React.FC<FamilySpacePageProps> = ({ onNavigate, userTier,
   const handleDelete = () => {
       if (selectedMoment) {
           if (window.confirm('Are you sure you want to permanently delete this momænt?')) {
+              // FIX: Pass string id to handler.
               onDeleteMoment(selectedMoment.id);
               setSelectedMomentId(null);
           }
@@ -191,8 +195,10 @@ const FamilySpacePage: React.FC<FamilySpacePageProps> = ({ onNavigate, userTier,
               {featuredMoments.map(moment => (
                   <button 
                     key={moment.id} 
+                    // FIX: Pass string id to handler.
                     onClick={() => handleSelectFeaturedMoment(moment.id)}
                     className={`text-left w-full h-full transition-all outline-none rounded-2xl bg-gray-800/50 overflow-hidden ring-1 ring-white/10 group
+                                {/* FIX: These comparisons will now work correctly with string IDs. */}
                                 ${selectedMomentId === moment.id ? 'ring-2 ring-indigo-400 scale-105' : 'hover:scale-105'} ${deletingMomentId === moment.id ? 'animate-dissolve-blue' : ''}`}
                   >
                       <div className="relative h-40">

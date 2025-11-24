@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Moment, Page } from '../types';
 import { Bookmark, Gem, Sparkles, Zap, MapPin, Users, Tag, BarChart, Wand2, Share2, MessageSquare, ArrowRight, Check } from 'lucide-react';
@@ -7,15 +6,15 @@ import Tooltip from './Tooltip';
 
 interface GridViewProps {
     moments: Moment[];
-    onPinToggle: (id: string) => void;
+    onPinToggle: (id: number) => void;
     onSelectMoment: (moment: Moment) => void;
     onShare: (moment: Moment) => void;
     onNavigate: (page: Page) => void;
-    newMomentId?: string | null;
-    deletingMomentId?: string | null;
+    newMomentId?: number | null;
+    deletingMomentId?: number | null;
     isSelecting?: boolean;
-    selectedIds?: Set<string>;
-    onToggleSelection?: (id: string) => void;
+    selectedIds?: Set<number>;
+    onToggleSelection?: (id: number) => void;
 }
 
 const tierIconMap = {
@@ -26,12 +25,12 @@ const tierIconMap = {
 
 const Card: React.FC<{ 
     moment: Moment; 
-    onPinToggle: (id: string) => void; 
+    onPinToggle: (id: number) => void; 
     onSelect: () => void; 
     onShare: () => void;
     onNavigate: (page: Page) => void;
-    newMomentId?: string | null;
-    deletingMomentId?: string | null;
+    newMomentId?: number | null;
+    deletingMomentId?: number | null;
     isSelecting?: boolean;
     isSelected?: boolean;
     onToggleSelection?: () => void;
@@ -58,7 +57,7 @@ const Card: React.FC<{
     const handleCardClick = () => {
         if (isSelecting && onToggleSelection) {
             onToggleSelection();
-        } else if (!moment.id.startsWith('-')) { // Prevent click on teasers
+        } else if (moment.id !== -1 && moment.id !== -2) { // Prevent click on teasers
             onSelect();
         }
     };
@@ -105,7 +104,7 @@ const Card: React.FC<{
     );
 
     const cardContent = () => {
-        if (moment.id === '-1') { // Teaser Card for Free tier
+        if (moment.id === -1) { // Teaser Card for Free tier
             return (
                 <div className="relative h-full rounded-3xl p-8 flex flex-col justify-between bg-gradient-to-br from-cyan-900/80 to-teal-900/60 ring-1 ring-cyan-400/30 overflow-hidden">
                     <div className="absolute inset-0">
@@ -128,7 +127,7 @@ const Card: React.FC<{
             );
         }
 
-        if (moment.id === '-2') { // Family Storyline Teaser
+        if (moment.id === -2) { // Family Storyline Teaser
             return (
                 <div className="relative h-full rounded-3xl p-8 flex flex-col justify-between bg-gradient-to-br from-indigo-900/80 to-purple-900/60 ring-1 ring-indigo-400/30 overflow-hidden">
                     <div className="absolute inset-0">

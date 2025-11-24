@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Moment, Page } from '../types';
 import LegacyIcon from './icons/LegacyIcon';
@@ -6,11 +5,11 @@ import { Users, BarChart, Check } from 'lucide-react';
 
 interface TimelineViewProps {
     moments: Moment[];
-    onPinToggle: (id: string) => void;
+    onPinToggle: (id: number) => void;
     onSelectMoment: (moment: Moment) => void;
     onShare: (moment: Moment) => void;
-    newMomentId?: string | null;
-    deletingMomentId?: string | null;
+    newMomentId?: number | null;
+    deletingMomentId?: number | null;
     onNavigate: (page: Page) => void;
 }
 
@@ -23,7 +22,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ moments, onPinToggle, onSel
             <div className="relative w-full max-w-3xl">
                 <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gray-700/50"></div>
                 {moments.filter(m => m.type !== 'collection').map((moment, index) => {
-                    if (moment.id === '-1') { // Insight teaser card
+                    if (moment.id === -1) { // Insight teaser card
                         return (
                             <div key="teaser-card" className="relative mb-12">
                                 <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-4 w-4 h-4 rounded-full bg-cyan-500 ring-4 ring-gray-900"></div>
@@ -46,7 +45,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ moments, onPinToggle, onSel
                         );
                     }
 
-                    if (moment.id === '-2') { // Family teaser card
+                    if (moment.id === -2) { // Family teaser card
                         return (
                             <div key="family-teaser-card" className="relative mb-12">
                                 <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-4 w-4 h-4 rounded-full bg-indigo-500 ring-4 ring-gray-900"></div>

@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { Moment } from '../types';
 import { MapPin, Users, Heart, Tag, Bot } from 'lucide-react';

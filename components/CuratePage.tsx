@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Moment, Message, Page, UserTier, TokenState, AeternyVoice, AeternyStyle } from '../types';
 import { rewriteStory, generateVideo, imageUrlToPayload, editImage, createStoryFromImages, analyzeImageForCuration, checkImageForMinors } from '../services/geminiService';
@@ -226,7 +227,7 @@ const CuratePage: React.FC<CuratePageProps> = (props) => {
         }, 500);
     }, [selectedMoment]);
 
-// FIX: Changed event type from React.DragEvent<HTMLDivElement> to React.DragEvent<HTMLLabelElement> to match the component it's attached to.
+    // FIX: Changed event type from React.DragEvent<HTMLDivElement> to React.DragEvent<HTMLLabelElement> to match the component it's attached to.
     const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
         e.preventDefault(); e.stopPropagation();
         if (e.dataTransfer.files) processFiles(e.dataTransfer.files);

@@ -142,9 +142,11 @@ export const initialMoments: Moment[] = [
 
 export const initialJourneys: Journey[] = [
   {
+    // FIX: Changed journey ID to be a string.
     id: '1',
     title: 'Pacific Coast Highway Trip',
     description: 'A journey from San Francisco to Los Angeles, capturing the beauty of the California coastline.',
+    // FIX: Changed momentIds to be strings to match the Journey interface.
     momentIds: ['2', '7'],
     coverImage: 'https://images.pexels.com/photos/386009/pexels-photo-386009.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
     isLegacy: true,
