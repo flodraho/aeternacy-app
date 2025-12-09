@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Moment, Page } from '../types';
 import { ArrowLeft, Wand2, Users, MapPin, Heart, Mountain, Plane, Check, X } from 'lucide-react';
@@ -109,7 +110,7 @@ const SmartCollectionPage: React.FC<SmartCollectionPageProps> = ({ moments, onNa
             </button>
             
             <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-bold text-white font-brand">The Curator's Studio</h1>
+                <h1 className="text-4xl md:text-5xl font-bold text-white font-brand">Smart Collections</h1>
                 <p className="text-slate-400 mt-2 max-w-2xl mx-auto">Rediscover your story. Let æterny find hidden themes in your moments and weave them into new, meaningful collections.</p>
             </div>
 

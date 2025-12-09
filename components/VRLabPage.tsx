@@ -18,7 +18,7 @@ const VRLabPage: React.FC<VRLabPageProps> = ({ onNavigate }) => {
             </div>
             {/* Hero Section */}
             <section className="relative h-screen -mt-20 flex items-center justify-center text-center overflow-hidden pt-20">
-                <img src="https://images.pexels.com/photos/373543/pexels-photo-373543.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Person immersed in a VR experience" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+                <img src="https://images.pexels.com/photos/5083491/pexels-photo-5083491.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Person immersed in a VR experience" className="absolute inset-0 w-full h-full object-cover opacity-20" />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-purple-900/40 to-transparent"></div>
                 <div className="relative z-10 p-6">
                     <h1 className="text-5xl md:text-7xl font-bold font-brand text-white" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.7)' }}>The VR Lab</h1>
@@ -65,7 +65,7 @@ const VRLabPage: React.FC<VRLabPageProps> = ({ onNavigate }) => {
                             <p className="text-slate-400 mt-4">This sensitive process, handled with the utmost care and respect, offers a profound way to preserve the essence of a loved one, including those who have passed on, or even immortalize the spirit of a cherished family pet.</p>
                         </div>
                         <div className="relative aspect-square w-full max-w-md mx-auto">
-                            <img src="https://images.pexels.com/photos/8741548/pexels-photo-8741548.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Artistic representation of a digital human avatar" className="w-full h-full object-cover rounded-2xl" />
+                            <img src="https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Artistic representation of a digital human avatar" className="w-full h-full object-cover rounded-2xl" />
                         </div>
                     </div>
                 </div>

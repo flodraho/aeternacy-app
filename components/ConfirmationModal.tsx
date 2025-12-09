@@ -1,7 +1,7 @@
+
 import React from 'react';
 import { X, Zap, Loader2 } from 'lucide-react';
 import TokenIcon from './icons/TokenIcon';
-import Tooltip from './Tooltip';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -40,14 +40,12 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, 
           
           <div className="bg-slate-700/50 p-4 rounded-lg text-center mb-6">
             <p className="text-sm text-slate-300">This will use</p>
-            <Tooltip text={tokenExplanation} position="top">
-                <div className="flex items-center justify-center gap-2 cursor-help">
-                    <p className="text-3xl font-bold text-white font-mono">
-                    {cost.toLocaleString()}
-                    </p>
-                    <TokenIcon className="w-7 h-7 text-cyan-400" />
-                </div>
-            </Tooltip>
+            <div className="flex items-center justify-center gap-2 cursor-help" title={tokenExplanation}>
+                <p className="text-3xl font-bold text-white font-mono">
+                {cost.toLocaleString()}
+                </p>
+                <TokenIcon className="w-7 h-7 text-cyan-400" />
+            </div>
           </div>
 
           <div className="flex justify-end gap-4">

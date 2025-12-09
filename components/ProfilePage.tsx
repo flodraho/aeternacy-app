@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { User, Camera, Bot, RotateCw, UploadCloud, Wand2, Loader2, Speaker, CheckCircle, Activity, Aperture, BookOpen, FilePenLine, BookImage, UserPlus, Trash2, Users, X, Archive, Zap, HelpCircle, Gift } from 'lucide-react';
 import { AeternyVoice, AeternyStyle, Page, UserTier, TokenState } from '../types';
@@ -5,7 +6,6 @@ import { fetchPexelsImages } from '../services/pexelsService';
 import { textToSpeech, imageUrlToPayload, editImage } from '../services/geminiService';
 import AeternyAvatarDisplay from './AeternyAvatarDisplay';
 import LegacyIcon from './icons/LegacyIcon';
-import Tooltip from './Tooltip';
 import { purchaseTokens, TOKEN_PACKS, TokenPack } from '../services/billingService';
 import TokenIcon from './icons/TokenIcon';
 import { TOKEN_COSTS } from '../services/costCatalog';
@@ -19,7 +19,7 @@ const iconOptions = [
 const voiceOptions: { name: string; voice: AeternyVoice; description: string }[] = [
     { name: 'The Mentor', voice: 'Kore', description: 'A warm, wise, and guiding voice.' },
     { name: 'The Sovereign', voice: 'Fenrir', description: 'A mature, resonant, and serious voice.' },
-    { name: 'The Storyteller', voice: 'Charon', description: 'A calm, deep, and narrative voice.' }
+    { name: 'The Storyteller', voice: 'Charon', description: 'A calm, deep, and narrative voice.' },
 ];
 
 const styleOptions: { name: AeternyStyle, description: string }[] = [
@@ -28,9 +28,9 @@ const styleOptions: { name: AeternyStyle, description: string }[] = [
     { name: 'Humorous', description: 'Lighthearted with a bit of wit' },
 ];
 
-const tokenExplanation = `Tokæn fuel your most ambitious creative projects within æternacy. Think of them as your allowance for the most advanced AI creations—like bringing a photo to life with a stunning animation or having æternacy craft a deeply personal video reflection.
+const tokenExplanation = `We introduced Tokæn as a way to fuel your most ambitious creative projects within æternacy. Think of them as your personal 'creative energy,' reserved for the most advanced AI creations—like bringing a photo to life with a stunning animation or having æternacy craft a deeply personal video reflection.
 
-These powerful features require significant energy from our dedicated AI servers. Using Tokæn allows us to keep the core æternacy experience unlimited, while ensuring the platform remains powerful and sustainable.`;
+These powerful features require significant energy from our dedicated AI servers. By using Tokæn, we can all be more mindful of this energy, ensuring that every creation is intentional and meaningful. This approach allows us to keep the core æternacy experience—capturing, curating, and sharing your everyday moments—completely free and unlimited, while making sure the platform remains powerful and sustainable for every storyteller's journey.`;
 
 
 interface ProfilePageProps {
@@ -50,10 +50,8 @@ interface ProfilePageProps {
     familyProfilePic: string | null;
     onFamilyProfilePicChange: (pic: string | null) => void;
     tokenState: TokenState;
-    showToast: (message: string, type: 'info' | 'success' | 'error') => void;
     onAddTokens: (amount: number) => void;
-    familyMembers: string[];
-    setFamilyMembers: React.Dispatch<React.SetStateAction<string[]>>;
+    showToast: (message: string, type: 'info' | 'success' | 'error') => void;
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = (props) => {
@@ -65,11 +63,8 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
         onNavigate, userTier, setUserTier,
         familyName, onFamilyNameChange,
         familyProfilePic, onFamilyProfilePicChange,
-        tokenState,
+        tokenState, onAddTokens,
         showToast,
-        onAddTokens,
-        familyMembers,
-        setFamilyMembers
     } = props;
 
     const [name, setName] = useState('John Doe');
@@ -103,6 +98,7 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
     const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
     // State for family management
+    const [familyMembers, setFamilyMembers] = useState(['jane.doe@example.com', 'alex.smith@example.com']);
     const [newMemberEmail, setNewMemberEmail] = useState('');
     const [inviteSent, setInviteSent] = useState(false);
 
@@ -252,10 +248,8 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
         try {
           const amount = await purchaseTokens(pack);
           onAddTokens(amount);
-          showToast(`${amount.toLocaleString()} Tokæn added!`, 'success');
         } catch (error) {
           console.error("Purchase failed:", error);
-           showToast(`Purchase failed. Please try again.`, 'error');
         } finally {
           setPurchasing(null);
         }
@@ -277,14 +271,12 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                         <h2 className="text-2xl font-bold font-brand mb-6">Your Profile</h2>
                         <div className="flex flex-col items-center gap-4 mb-8">
                             <div className="relative w-24 h-24">
-                                <Tooltip text="Change Profile Picture">
-                                    <label htmlFor="profile-pic-upload" className="cursor-pointer group">
-                                        <div className="w-full h-full rounded-full bg-gray-700 flex items-center justify-center overflow-hidden ring-2 ring-gray-600">
-                                            {profilePic ? <img src={profilePic} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-12 h-12 text-slate-500" />}
-                                        </div>
-                                        <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-6 h-6 text-white" /></div>
-                                    </label>
-                                </Tooltip>
+                                <label htmlFor="profile-pic-upload" className="cursor-pointer group">
+                                    <div className="w-full h-full rounded-full bg-gray-700 flex items-center justify-center overflow-hidden ring-2 ring-gray-600">
+                                        {profilePic ? <img src={profilePic} alt="Profile" className="w-full h-full object-cover" /> : <User className="w-12 h-12 text-slate-500" />}
+                                    </div>
+                                    <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-6 h-6 text-white" /></div>
+                                </label>
                                 <input type="file" id="profile-pic-upload" className="hidden" accept="image/*" onChange={handlePictureUpload} />
                             </div>
                         </div>
@@ -300,19 +292,17 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                         </div>
                     </div>
                     
-                    {(userTier === 'fæmily' || userTier === 'fæmilyPlus' || userTier === 'legacy') && (
+                    {(userTier === 'fæmily' || userTier === 'legacy') && (
                         <div className="bg-gray-800/50 rounded-2xl ring-1 ring-white/10 p-8 h-fit">
                             <h2 className="text-2xl font-bold font-brand mb-6">Fæmily Profile & Management</h2>
                             <div className="flex flex-col items-center gap-4 mb-8">
                                 <div className="relative w-24 h-24">
-                                    <Tooltip text="Change Family Picture">
-                                        <label htmlFor="family-profile-pic-upload" className="cursor-pointer group">
-                                            <div className="w-full h-full rounded-full bg-gray-700 flex items-center justify-center overflow-hidden ring-2 ring-gray-600">
-                                                {familyProfilePic ? <img src={familyProfilePic} alt="Family Profile" className="w-full h-full object-cover" /> : <Users className="w-12 h-12 text-slate-500" />}
-                                            </div>
-                                            <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-6 h-6 text-white" /></div>
-                                        </label>
-                                    </Tooltip>
+                                    <label htmlFor="family-profile-pic-upload" className="cursor-pointer group">
+                                        <div className="w-full h-full rounded-full bg-gray-700 flex items-center justify-center overflow-hidden ring-2 ring-gray-600">
+                                            {familyProfilePic ? <img src={familyProfilePic} alt="Family Profile" className="w-full h-full object-cover" /> : <Users className="w-12 h-12 text-slate-500" />}
+                                        </div>
+                                        <div className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Camera className="w-6 h-6 text-white" /></div>
+                                    </label>
                                     <input type="file" id="family-profile-pic-upload" className="hidden" accept="image/*" onChange={handleFamilyPictureUpload} />
                                 </div>
                                 <div>
@@ -326,16 +316,14 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                                     />
                                 </div>
                             </div>
-                            <p className="text-sm text-slate-400 mb-4">You have used {familyMembers.length + 1} / {userTier === 'legacy' ? 'Unlimited' : userTier === 'fæmilyPlus' ? 10 : 5} member slots.</p>
+                            <p className="text-sm text-slate-400 mb-4">You have used {familyMembers.length + 1} / {userTier === 'legacy' ? 'Unlimited' : 5} member slots.</p>
                             <div className="space-y-3 mb-6">
                                 <div className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg">
                                     <div>
                                         <p className="font-semibold text-white">{name} (Owner)</p>
                                         <p className="text-xs text-slate-400">{email}</p>
                                     </div>
-                                    <Tooltip text="Gift Tokæn (Coming Soon)">
-                                        <button onClick={() => showToast('Tokæn gifting is coming soon!', 'info')} className="text-slate-500 hover:text-cyan-400 p-1"><Gift className="w-4 h-4" /></button>
-                                    </Tooltip>
+                                    <button onClick={() => showToast('Tokæn gifting is coming soon!', 'info')} className="text-slate-500 hover:text-cyan-400 p-1"><Gift className="w-4 h-4" /></button>
                                 </div>
                                 {familyMembers.map(memberEmail => (
                                     <div key={memberEmail} className="flex items-center justify-between bg-slate-700/50 p-3 rounded-lg">
@@ -344,9 +332,7 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                                             <p className="text-xs text-slate-400">{memberEmail}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <Tooltip text="Gift Tokæn (Coming Soon)">
-                                                <button onClick={() => showToast('Tokæn gifting is coming soon!', 'info')} className="text-slate-500 hover:text-cyan-400 p-1"><Gift className="w-4 h-4" /></button>
-                                            </Tooltip>
+                                            <button onClick={() => showToast('Tokæn gifting is coming soon!', 'info')} className="text-slate-500 hover:text-cyan-400 p-1"><Gift className="w-4 h-4" /></button>
                                             <button onClick={() => handleRemoveMember(memberEmail)} className="text-slate-500 hover:text-red-400 p-1"><Trash2 className="w-4 h-4" /></button>
                                         </div>
                                     </div>
@@ -379,7 +365,7 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                         <h2 className="text-xl font-bold font-brand mb-4 text-amber-300">Demo Controls</h2>
                         <p className="text-sm text-slate-400 mb-4">Switch your user tier to experience all platform features.</p>
                         <div className="flex flex-col space-y-2">
-                            {(['free', 'essæntial', 'fæmily', 'fæmilyPlus', 'legacy'] as UserTier[]).map(tier => (
+                            {(['free', 'essæntial', 'fæmily', 'legacy'] as UserTier[]).map(tier => (
                                 <button 
                                     key={tier} 
                                     onClick={() => setUserTier(tier)}
@@ -390,7 +376,7 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                                         }
                                 >
                                     <div className="flex justify-between items-center">
-                                        <span className="capitalize">{tier === 'fæmily' ? 'Fæmily' : tier === 'fæmilyPlus' ? 'Fæmily Plus' : tier}</span>
+                                        <span className="capitalize">{tier === 'fæmily' ? 'Fæmily' : tier}</span>
                                         {userTier === tier && <CheckCircle className="w-5 h-5 text-cyan-400" />}
                                     </div>
                                 </button>
@@ -403,10 +389,8 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                 <div className="lg:col-span-2 space-y-8">
                     <div className="bg-gray-800/50 rounded-2xl ring-1 ring-white/10 p-8">
                         <div className="flex items-center gap-2 mb-6">
-                            <h2 className="text-2xl font-bold font-brand">Tokæn</h2>
-                            <Tooltip text={tokenExplanation} position="bottom">
-                                <HelpCircle className="w-5 h-5 text-slate-500 cursor-help" />
-                            </Tooltip>
+                            <h2 className="text-2xl font-bold font-brand">Tokæn Balance</h2>
+                            <div title={tokenExplanation} className="cursor-help"><HelpCircle className="w-5 h-5 text-slate-500" /></div>
                         </div>
                         
                         <div className="text-center mb-8">
@@ -418,7 +402,7 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                             <div className="w-full bg-slate-700 rounded-full h-2.5 mt-4 max-w-sm mx-auto">
                                <div className="bg-cyan-400 h-2.5 rounded-full" style={{ width: `${balancePercentage}%` }}></div>
                             </div>
-                            <p className="text-xs text-slate-500 mt-2">Your Tokæn for advanced AI creations.</p>
+                            <p className="text-xs text-slate-500 mt-2">Your creative energy for advanced AI creations.</p>
                         </div>
                         
                         <div className="bg-slate-700/50 p-4 rounded-lg mb-8">
@@ -431,35 +415,38 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                                 )}
                             </div>
                         </div>
-
+                        
                         <div>
-                            <h3 className="text-lg font-bold text-white mb-4">Refill Tokæn</h3>
+                            <h3 className="text-base font-semibold text-white mb-4">Refill Tokæn</h3>
                             <div className="space-y-3">
-                                {(Object.keys(TOKEN_PACKS) as TokenPack[]).map(pack => (
+                            {(Object.keys(TOKEN_PACKS) as TokenPack[]).map(pack => (
                                 <button 
-                                    key={pack}
-                                    onClick={() => handlePurchase(pack)}
-                                    disabled={purchasing !== null}
-                                    className="w-full flex items-center justify-between bg-slate-700/50 hover:bg-slate-700 p-4 rounded-lg transition-colors disabled:opacity-50"
+                                key={pack}
+                                onClick={() => handlePurchase(pack)}
+                                disabled={purchasing !== null}
+                                className="w-full flex items-center justify-between bg-slate-700/50 hover:bg-slate-700 p-4 rounded-lg transition-colors disabled:opacity-50"
                                 >
-                                    <div className="text-left">
-                                    <p className="font-bold text-white"><span className="font-mono">{TOKEN_PACKS[pack].amount.toLocaleString()}</span> Tokæn</p>
-                                    <p className="text-xs text-slate-400">{pack.charAt(0).toUpperCase() + pack.slice(1)} Refill Pack</p>
+                                <div className="text-left flex items-center gap-3">
+                                    <TokenIcon className="w-6 h-6 text-slate-400"/>
+                                    <div>
+                                        <p className="font-bold text-white"><span className="font-mono">{TOKEN_PACKS[pack].amount.toLocaleString()}</span> Tokæn</p>
+                                        <p className="text-xs text-slate-400">{pack.charAt(0).toUpperCase() + pack.slice(1)} Refill Pack</p>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                </div>
+                                <div className="flex items-center gap-2">
                                     {purchasing === pack 
-                                        ? <Loader2 className="w-5 h-5 animate-spin"/>
-                                        : <span className="font-bold bg-cyan-600 text-white text-sm py-1 px-3 rounded-full">{TOKEN_PACKS[pack].price}</span>
+                                    ? <Loader2 className="w-5 h-5 animate-spin"/>
+                                    : <span className="font-bold bg-cyan-600 text-white text-sm py-1 px-3 rounded-full">{TOKEN_PACKS[pack].price}</span>
                                     }
-                                    </div>
+                                </div>
                                 </button>
-                                ))}
+                            ))}
                             </div>
                             <p className="text-xs text-slate-500 mt-4 text-center">Your purchase will be processed securely.</p>
                         </div>
                     </div>
                      <div className="bg-gray-800/50 rounded-2xl ring-1 ring-white/10 p-8">
-                        <h2 className="text-2xl font-bold font-brand mb-6">Tokæn Estimator</h2>
+                        <h2 className="text-2xl font-bold font-brand mb-6">Tokæn Usage Estimator</h2>
                         <div className="space-y-4 text-sm">
                             <div>
                                 <label htmlFor="animations" className="flex justify-between text-slate-300 mb-1"><span>Living Photo Animations</span><span className="font-bold">{estimatorValues.animations}</span></label>
@@ -484,7 +471,7 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                         </div>
                         <div className="mt-6 text-center bg-slate-700/50 p-4 rounded-lg">
                             <p className="text-lg font-semibold text-white">Estimated Monthly Usage</p>
-                            <p className="text-3xl font-bold text-cyan-400 font-mono mt-1">{estimatedCost.toLocaleString()} <span className="text-lg">Tokæn</span></p>
+                            <p className="text-3xl font-bold text-cyan-400 font-mono mt-1">{estimatedCost.toLocaleString()}</p>
                             <p className="text-xs text-slate-400 mt-2">An average active family might use 500-1,000 Tokæn/month on features like Living Photos and AI Reflections for their captured memories.</p>
                         </div>
                     </div>
@@ -551,12 +538,8 @@ const ProfilePage: React.FC<ProfilePageProps> = (props) => {
                                 <p className="text-sm text-slate-400">Select an appearance for your AI curator.</p>
                                 <div className="flex items-center gap-2">
                                     <input type="file" ref={aeternyFileInputRef} onChange={handleAeternyAvatarUpload} className="hidden" accept="image/*" />
-                                    <Tooltip text="Upload your own image">
-                                        <button type="button" onClick={() => aeternyFileInputRef.current?.click()} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-sm font-semibold py-2 px-3 rounded-full"><UploadCloud className="w-4 h-4" /> Upload</button>
-                                    </Tooltip>
-                                    <Tooltip text="Generate new AI options">
-                                        <button type="button" onClick={fetchAvatars} disabled={isRefreshingAvatars} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-sm font-semibold py-2 px-3 rounded-full"><RotateCw className={`w-4 h-4 ${isRefreshingAvatars ? 'animate-spin' : ''}`} /> Refresh</button>
-                                    </Tooltip>
+                                    <button type="button" onClick={() => aeternyFileInputRef.current?.click()} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-sm font-semibold py-2 px-3 rounded-full"><UploadCloud className="w-4 h-4" /> Upload</button>
+                                    <button type="button" onClick={fetchAvatars} disabled={isRefreshingAvatars} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-sm font-semibold py-2 px-3 rounded-full"><RotateCw className={`w-4 h-4 ${isRefreshingAvatars ? 'animate-spin' : ''}`} /> Refresh</button>
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto pr-2">

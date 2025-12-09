@@ -1,8 +1,8 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Message, Page } from '../types';
-import { X, Mic, Send, Bot, Square, Volume2, ArrowUp, Speaker, VolumeX, ArrowRight } from 'lucide-react';
+import { X, Mic, Send, Bot, Square, Volume2, ArrowUp, Speaker, VolumeX } from 'lucide-react';
 import AeternyAvatarDisplay from './AeternyAvatarDisplay';
-import Tooltip from './Tooltip';
 
 interface AeternyFabProps {
   isOpen: boolean;
@@ -25,9 +25,6 @@ interface AeternyFabProps {
   liveDisplay: { user: string; ai: string } | null;
   currentPage: Page;
   onTriggerGuide: () => void;
-  suggestion: string | null;
-  onCloseSuggestion: () => void;
-  onSuggestionClick: () => void;
 }
 
 const AeternyFab: React.FC<AeternyFabProps> = (props) => {
@@ -35,8 +32,7 @@ const AeternyFab: React.FC<AeternyFabProps> = (props) => {
     isOpen, onToggle, messages, input, onInputChange, onSend, isLoading,
     isRecording, onToggleRecording, isTtsEnabled, onToggleTts, onPlayTts,
     isTtsPlaying, currentlyPlayingText, aeternyAvatar,
-    contextualPrompts, onContextualSend, liveDisplay, currentPage, onTriggerGuide,
-    suggestion, onCloseSuggestion, onSuggestionClick
+    contextualPrompts, onContextualSend, liveDisplay, currentPage, onTriggerGuide
   } = props;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -51,40 +47,14 @@ const AeternyFab: React.FC<AeternyFabProps> = (props) => {
 
   return (
     <>
-      {suggestion && !isOpen && (
-        <div 
-            className="fixed bottom-24 right-20 w-64 bg-slate-700/95 backdrop-blur-sm text-white p-4 rounded-xl shadow-lg z-40 animate-fade-in-up cursor-pointer ring-1 ring-white/10"
-            onClick={onSuggestionClick}
-            style={{ animationDuration: '0.5s' }}
-        >
-            <button 
-                onClick={(e) => { e.stopPropagation(); onCloseSuggestion(); }} 
-                className="absolute top-2 right-2 text-slate-400 hover:text-white"
-                aria-label="Close suggestion"
-            >
-                <X size={16} />
-            </button>
-            <div className="relative">
-                <p className="text-sm pr-6">{suggestion}</p>
-                <div className="absolute bottom-0 right-0">
-                    <ArrowUp className="w-5 h-5 text-cyan-400" />
-                </div>
-            </div>
-            {/* Centered pointer: FAB is w-14 (3.5rem) at right-6 (1.5rem). Center is 1.5 + 1.75 = 3.25rem. Pointer is w-4 (1rem). Right edge should be 3.25 - 0.5 = 2.75rem (right-11). */}
-            <div className="absolute -bottom-2 right-11 w-4 h-4 bg-slate-700/95 transform rotate-45"></div>
-        </div>
-      )}
-
-      <Tooltip text="Chat with æterny" position="left">
-        <button
-          onClick={onToggle}
-          className="aeterny-fab fixed bottom-6 right-6 w-14 h-14 bg-slate-800/60 backdrop-blur-sm ring-1 ring-cyan-500/50 rounded-full shadow-lg flex items-center justify-center text-white z-50 transition-all duration-300 transform hover:scale-105 hover:ring-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-500/50"
-          aria-label="Open æterny chat"
-        >
-          <div className="aeterny-fab-pulse"></div>
-          <AeternyAvatarDisplay avatar={aeternyAvatar} className="w-full h-full rounded-full" />
-        </button>
-      </Tooltip>
+      <button
+        onClick={onToggle}
+        className="aeterny-fab fixed bottom-6 right-6 w-14 h-14 bg-slate-800/60 backdrop-blur-sm ring-1 ring-cyan-500/50 rounded-full shadow-lg flex items-center justify-center text-white z-50 transition-all duration-300 transform hover:scale-105 hover:ring-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-500/50"
+        aria-label="Open æterny chat"
+      >
+        <div className="aeterny-fab-pulse"></div>
+        <AeternyAvatarDisplay avatar={aeternyAvatar} className="w-full h-full rounded-full" />
+      </button>
 
       {isOpen && (
         <div className="aeterny-chat-bubble fixed bottom-24 right-6 w-full max-w-sm h-[60vh] bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-2xl ring-1 ring-white/10 z-50 flex flex-col overflow-hidden">
@@ -95,16 +65,12 @@ const AeternyFab: React.FC<AeternyFabProps> = (props) => {
               <h3 className="font-bold text-white text-base font-brand">Conversation with æterny</h3>
             </div>
             <div className="flex items-center gap-1">
-              <Tooltip text={isTtsEnabled ? "Disable voice output" : "Enable voice output"} position="bottom">
-                <button onClick={onToggleTts} className={`p-2 rounded-full transition-colors ${isTtsEnabled ? 'text-cyan-400' : 'text-slate-400 hover:bg-white/5'}`}>
-                   {isTtsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                </button>
-              </Tooltip>
-              <Tooltip text="Close chat" position="bottom">
-                <button onClick={onToggle} className="p-2 rounded-full text-slate-400 hover:bg-white/5" aria-label="Close chat">
-                  <X className="w-5 h-5" />
-                </button>
-              </Tooltip>
+              <button onClick={onToggleTts} className={`p-2 rounded-full transition-colors ${isTtsEnabled ? 'text-cyan-400' : 'text-slate-400 hover:bg-white/5'}`}>
+                  {isTtsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+              <button onClick={onToggle} className="p-2 rounded-full text-slate-400 hover:bg-white/5" aria-label="Close chat">
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
           
@@ -118,7 +84,6 @@ const AeternyFab: React.FC<AeternyFabProps> = (props) => {
                 <div className={`max-w-xs p-3 rounded-2xl text-sm relative group ${msg.sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-gray-700 text-slate-200 rounded-bl-none'}`}>
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                    {msg.sender === 'ai' && (
-                     <Tooltip text={!isTtsEnabled ? "Voice output is disabled" : "Play audio"}>
                       <button 
                         onClick={() => onPlayTts(msg.text)} 
                         className="absolute -bottom-2 -right-2 w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50" 
@@ -131,7 +96,6 @@ const AeternyFab: React.FC<AeternyFabProps> = (props) => {
                             : <VolumeX className="w-3 h-3 text-slate-500"/>
                         }
                       </button>
-                    </Tooltip>
                   )}
                 </div>
               </div>
@@ -209,31 +173,27 @@ const AeternyFab: React.FC<AeternyFabProps> = (props) => {
                 />
                 <div className="absolute right-2 flex items-center">
                     {input.trim() ? (
-                        <Tooltip text="Send" position="top">
-                            <button
-                                onClick={onSend}
-                                disabled={isLoading}
-                                className="w-8 h-8 flex items-center justify-center bg-cyan-600 hover:bg-cyan-500 text-white rounded-full transition-colors disabled:bg-gray-600"
-                                aria-label="Send message"
-                            >
-                                <ArrowUp className="w-4 h-4" />
-                            </button>
-                        </Tooltip>
+                        <button
+                            onClick={onSend}
+                            disabled={isLoading}
+                            className="w-8 h-8 flex items-center justify-center bg-cyan-600 hover:bg-cyan-500 text-white rounded-full transition-colors disabled:bg-gray-600"
+                            aria-label="Send message"
+                        >
+                            <ArrowUp className="w-4 h-4" />
+                        </button>
                     ) : (
-                        <Tooltip text={isRecording ? 'Stop recording' : 'Start recording'} position="top">
-                            <button
-                                onClick={onToggleRecording}
-                                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                                    isRecording
-                                        ? 'bg-red-500 text-white'
-                                        : 'bg-transparent text-slate-400 hover:bg-slate-700 hover:text-white'
-                                }`}
-                                disabled={isLoading}
-                                aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-                            >
-                                {isRecording ? <Square className="w-4 h-4" fill="white" /> : <Mic className="w-4 h-4" />}
-                            </button>
-                        </Tooltip>
+                        <button
+                            onClick={onToggleRecording}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                                isRecording
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-transparent text-slate-400 hover:bg-slate-700 hover:text-white'
+                            }`}
+                            disabled={isLoading}
+                            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+                        >
+                            {isRecording ? <Square className="w-4 h-4" fill="white" /> : <Mic className="w-4 h-4" />}
+                        </button>
                     )}
                 </div>
             </div>

@@ -11,8 +11,8 @@ interface LegacyPageProps {
 }
 
 const initialStewards: Steward[] = [
-  { id: '1', name: 'Jane Doe', email: 'jane.doe@example.com', role: 'Successor', status: 'Certified' },
-  { id: '2', name: 'Alex Smith', email: 'alex.s@example.com', role: 'Guardian', status: 'Active' },
+  { id: '1', name: 'Jane Doe', email: 'jane.doe@example.com', role: 'Successor' },
+  { id: '2', name: 'Alex Smith', email: 'alex.s@example.com', role: 'Guardian' },
 ];
 
 const LegacyPage: React.FC<LegacyPageProps> = ({ onBack, userTier, onNavigate }) => {
@@ -34,7 +34,6 @@ const LegacyPage: React.FC<LegacyPageProps> = ({ onBack, userTier, onNavigate })
         name: newName,
         email: newEmail,
         role: newRole,
-        status: 'Pending',
       };
       setStewards(prev => [...prev, newSteward]);
       setNewName('');

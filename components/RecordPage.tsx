@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { createMomentFromRecording } from '../services/geminiService';
 import { Moment } from '../types';
-import { Mic, Video, MapPin, Loader2, Save, Trash2, Bot, HeartPulse, MessageSquare, Users, Check } from 'lucide-react';
+import { Mic, Video, MapPin, Loader2, Save, Trash2, Bot, StopCircle, Camera, Sparkles, MicOff, VideoOff, MapPinOff, Users, UserPlus } from 'lucide-react';
 
 // --- Helper Functions ---
 function encode(bytes: Uint8Array) {
@@ -27,39 +28,45 @@ const blobToBase64 = (blob: globalThis.Blob): Promise<string> => {
 };
 
 // --- Sub-components ---
-const ToggleSwitch: React.FC<{
-    icon: React.ElementType;
-    label: string;
-    description: string;
-    enabled: boolean;
-    onToggle: (enabled: boolean) => void;
-    disabled?: boolean;
-}> = ({ icon: Icon, label, description, enabled, onToggle, disabled = false }) => (
-    <div className={`flex items-center justify-between p-4 rounded-lg transition-colors ${disabled ? 'bg-gray-800/50 opacity-50' : 'bg-gray-700/50'}`}>
-        <div className="flex items-center gap-4">
-            <Icon className={`w-6 h-6 ${disabled ? 'text-slate-500' : 'text-cyan-400'}`} />
-            <div>
-                <p className={`font-semibold ${disabled ? 'text-slate-400' : 'text-white'}`}>{label}</p>
-                <p className="text-sm text-slate-400">{description}</p>
-            </div>
-        </div>
-        <button
-            role="switch"
-            aria-checked={enabled}
-            onClick={() => !disabled && onToggle(!enabled)}
-            disabled={disabled}
-            className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${
-                enabled ? 'bg-cyan-500' : 'bg-gray-600'
-            } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-        >
-            <span
-                className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${
-                    enabled ? 'translate-x-6' : 'translate-x-1'
-                }`}
-            />
-        </button>
-    </div>
+
+const SensorButton: React.FC<{ 
+    active: boolean; 
+    icon: React.ElementType; 
+    offIcon: React.ElementType;
+    label: string; 
+    onClick: () => void;
+}> = ({ active, icon: Icon, offIcon: OffIcon, label, onClick }) => (
+    <button 
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all duration-300 w-24 aspect-square backdrop-blur-md border ${
+            active 
+            ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]' 
+            : 'bg-slate-800/40 border-white/5 text-slate-500 hover:bg-slate-800/60'
+        }`}
+    >
+        {active ? <Icon className="w-6 h-6" /> : <OffIcon className="w-6 h-6" />}
+        <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
+    </button>
 );
+
+const AudioVisualizer: React.FC<{ active: boolean }> = ({ active }) => {
+    if (!active) return null;
+    return (
+        <div className="flex items-center justify-center gap-1 h-8">
+            {[...Array(5)].map((_, i) => (
+                <div 
+                    key={i} 
+                    className="w-1 bg-cyan-400 rounded-full animate-music-bar"
+                    style={{ 
+                        height: '100%', 
+                        animationDelay: `${i * 0.1}s`,
+                        animationDuration: '0.8s' 
+                    }} 
+                />
+            ))}
+        </div>
+    );
+};
 
 
 // --- Component ---
@@ -79,8 +86,10 @@ const RecordPage: React.FC<RecordPageProps> = ({ onCreateMoment }) => {
     
     // Capture source toggles
     const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
-    const [isCameraEnabled, setIsCameraEnabled] = useState(true);
+    const [isCameraEnabled, setIsCameraEnabled] = useState(false); // Default to voice only for "Story" feel
     const [isLocationEnabled, setIsLocationEnabled] = useState(true);
+    const [isJointSession, setIsJointSession] = useState(false);
+    const [jointPartner, setJointPartner] = useState<string | null>(null);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -95,6 +104,7 @@ const RecordPage: React.FC<RecordPageProps> = ({ onCreateMoment }) => {
     const frameIntervalRef = useRef<number | null>(null);
     const isStoppingRef = useRef(false);
 
+    // Animation for processing view
     useEffect(() => {
         let interval: number;
         if (pageState === 'processing' && capturedImagesRef.current.length > 0) {
@@ -136,6 +146,17 @@ const RecordPage: React.FC<RecordPageProps> = ({ onCreateMoment }) => {
     useEffect(() => {
         return () => cleanup();
     }, [cleanup]);
+
+    const toggleJointSession = () => {
+        if (!isJointSession) {
+            // Mock selecting a partner
+            setJointPartner("Jane Doe");
+            setIsJointSession(true);
+        } else {
+            setJointPartner(null);
+            setIsJointSession(false);
+        }
+    };
 
     const startRecording = async () => {
         if (isStoppingRef.current || (!isVoiceEnabled && !isCameraEnabled)) return;
@@ -241,6 +262,10 @@ const RecordPage: React.FC<RecordPageProps> = ({ onCreateMoment }) => {
 
         try {
             const result = await createMomentFromRecording(transcribedTextRef.current, capturedImagesRef.current, locationRef.current);
+            // Inject joint partner if present
+            if (isJointSession && jointPartner) {
+                result.tags.people = [...(result.tags.people || []), jointPartner];
+            }
             setGeneratedMoment(result);
             setPageState('review');
         } catch (error) {
@@ -269,7 +294,8 @@ const RecordPage: React.FC<RecordPageProps> = ({ onCreateMoment }) => {
             location: generatedMoment.tags.location[0] || undefined,
             people: generatedMoment.tags.people,
             activities: generatedMoment.tags.activities,
-            photoCount: capturedImagesRef.current.length
+            photoCount: capturedImagesRef.current.length,
+            collaborators: isJointSession && jointPartner ? [jointPartner] : []
         };
 
         onCreateMoment(newMoment);
@@ -283,165 +309,210 @@ const RecordPage: React.FC<RecordPageProps> = ({ onCreateMoment }) => {
         setGeneratedMoment(null);
         setPageState('idle');
     };
-    
-    const renderContent = () => {
-        switch(pageState) {
-            case 'idle':
-                return (
-                    <div className="w-full max-w-2xl mx-auto">
-                        <div className="text-center">
-                            <h1 className="text-4xl font-bold text-white mb-2 font-brand">Capture a Momænt</h1>
-                            <p className="text-lg text-slate-400 mb-8">Configure your capture sources and start recording your experience.</p>
-                        </div>
-                        
-                        <div className="bg-gray-800/50 p-6 rounded-2xl ring-1 ring-white/10">
-                            <h2 className="text-xl font-bold text-white mb-4 font-brand">Capture Sources</h2>
-                             <div className="space-y-4">
-                                <ToggleSwitch icon={Mic} label="Voice" description="Live audio transcription" enabled={isVoiceEnabled} onToggle={setIsVoiceEnabled} />
-                                <ToggleSwitch icon={Video} label="Camera" description="Video frames from your camera" enabled={isCameraEnabled} onToggle={setIsCameraEnabled} />
-                                <ToggleSwitch icon={MapPin} label="Location" description="Geotag your momænt" enabled={isLocationEnabled} onToggle={setIsLocationEnabled} />
-                                <ToggleSwitch icon={HeartPulse} label="Biometrics" description="Heart rate, activity (Coming Soon)" enabled={false} onToggle={() => {}} disabled />
-                                <ToggleSwitch icon={MessageSquare} label="Social Feed" description="Import related posts (Coming Soon)" enabled={false} onToggle={() => {}} disabled />
-                            </div>
-                        </div>
 
-                        <div className="bg-gray-800/50 p-6 rounded-2xl ring-1 ring-white/10 mt-6">
-                            <h2 className="text-xl font-bold text-white mb-2 font-brand">Multi-perspective Momænt</h2>
-                            <p className="text-sm text-slate-400 mb-4">Invite others to capture this moment with you from their perspective, like a wedding or birthday.</p>
-                            <div className="flex items-center justify-between bg-gray-700/50 p-4 rounded-lg">
-                                 <div className="flex items-center">
-                                    <div className="flex items-center -space-x-3">
-                                        <div className="w-10 h-10 rounded-full bg-cyan-500 ring-2 ring-gray-800 flex items-center justify-center font-bold text-white">YOU</div>
-                                        <div className="w-10 h-10 rounded-full bg-slate-600 ring-2 ring-gray-800 flex items-center justify-center text-slate-300 text-xl font-light">?</div>
-                                    </div>
-                                    <span className="text-sm text-slate-300 ml-4 hidden sm:block">You + Others</span>
-                                </div>
-                                <button className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded-full transition-colors flex items-center gap-2 text-sm">
-                                    <Users className="w-4 h-4"/> Invite Others
-                                </button>
-                            </div>
-                        </div>
+    // --- UI Renderers ---
 
-                        <div className="mt-8">
-                             <button
-                                onClick={startRecording}
-                                disabled={!isVoiceEnabled && !isCameraEnabled}
-                                className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-8 rounded-full text-lg transition-colors flex items-center justify-center gap-3 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                            >
-                                <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
-                                Start Capture
-                            </button>
-                            <p className="text-xs text-center text-slate-500 mt-2">At least one media source (Voice or Camera) must be enabled.</p>
-                        </div>
-                    </div>
-                );
-            case 'recording':
-                return (
-                     <div className="w-full h-[80vh] max-w-4xl bg-black rounded-2xl shadow-2xl ring-1 ring-white/10 flex flex-col">
-                        <div className="relative flex-grow w-full rounded-lg overflow-hidden">
-                            {isCameraEnabled ? (
-                                <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-slate-500">
-                                    <Mic className="w-24 h-24 mb-4"/>
-                                    <p>Audio capture in progress...</p>
-                                </div>
-                            )}
-                             <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
-                                {isCameraEnabled && <span className="flex items-center gap-1.5 text-xs bg-black/50 text-white px-2 py-1 rounded-full backdrop-blur-sm"><Check className="w-3 h-3 text-green-400"/> Camera Active</span>}
-                                {isVoiceEnabled && <span className="flex items-center gap-1.5 text-xs bg-black/50 text-white px-2 py-1 rounded-full backdrop-blur-sm"><Check className="w-3 h-3 text-green-400"/> Mic Active</span>}
-                                {isLocationEnabled && <span className="flex items-center gap-1.5 text-xs bg-black/50 text-white px-2 py-1 rounded-full backdrop-blur-sm"><Check className="w-3 h-3 text-green-400"/> Location Active</span>}
+    const renderReview = () => {
+        if (!generatedMoment) return null;
+        const hasImages = capturedImagesRef.current && capturedImagesRef.current.length > 0;
+        return (
+            <div className="w-full max-w-4xl bg-gray-800/50 rounded-3xl shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[85vh] animate-fade-in-up">
+                <div className="p-8 border-b border-white/10 flex justify-between items-start">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                                <Sparkles className="w-5 h-5 text-cyan-400" />
                             </div>
-                            {isVoiceEnabled && (
-                                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                                    <div className="bg-black/40 backdrop-blur-sm p-4 rounded-lg text-slate-200 italic whitespace-pre-wrap max-h-48 overflow-y-auto">
-                                        {transcribedText || "Listening..."}
-                                    </div>
-                                </div>
-                            )}
+                            <h2 className="text-2xl font-bold text-white font-brand">Momænt Crafted</h2>
                         </div>
-                        <button onClick={stopRecording} className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-b-2xl text-lg transition-colors flex-shrink-0">Stop Capture</button>
+                        <p className="text-slate-400 text-sm">æterny has synthesized your recording.</p>
                     </div>
-                );
-            case 'processing':
-                 return (
-                    <div className="text-center">
-                         <div className="relative w-48 h-32 mx-auto mb-6 rounded-lg overflow-hidden bg-slate-800">
-                            {capturedImagesRef.current.length > 0 ? (
-                                 <img 
-                                    key={processingImageIndex}
-                                    src={`data:${capturedImagesRef.current[processingImageIndex].mimeType};base64,${capturedImagesRef.current[processingImageIndex].data}`} 
-                                    className="w-full h-full object-cover animate-fade-in"
-                                    style={{animationDuration: '200ms'}}
-                                    alt="Processing..."
-                                />
-                            ) : (
-                                <Bot className="w-16 h-16 text-cyan-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                            )}
-                        </div>
-                        <h2 className="text-3xl font-bold text-white font-brand">Weaving your memory...</h2>
-                        <p className="text-slate-400 mt-2">æterny is analyzing your recording to build a beautiful momænt.</p>
-                    </div>
-                );
-            case 'review':
-                if (!generatedMoment) return null;
-                const hasImages = capturedImagesRef.current && capturedImagesRef.current.length > 0;
-                return (
-                    <div className="w-full max-w-4xl bg-gray-800/50 rounded-2xl shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90vh]">
-                        <div className="p-8 flex-shrink-0">
-                            <div className="flex items-center gap-3 mb-4">
-                                <Bot className="w-8 h-8 text-cyan-400" />
-                                <h2 className="text-3xl font-bold text-white font-brand">æterny's Draft</h2>
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">{generatedMoment.title}</h3>
-                            <div className="prose prose-invert prose-p:text-slate-300 max-w-none max-h-48 overflow-y-auto pr-4">
-                                <p>{generatedMoment.story}</p>
-                            </div>
-                        </div>
+                </div>
 
-                        <div className="flex-grow overflow-y-auto px-8">
-                           {hasImages ? (
-                                <div className="masonry-grid">
-                                    {capturedImagesRef.current.map((img, index) => (
-                                        <div key={index} className="masonry-item mb-4">
-                                            <img 
-                                                src={`data:${img.mimeType};base64,${img.data}`} 
-                                                alt={`Captured moment ${index + 1}`} 
-                                                className="w-full h-auto rounded-lg" 
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="my-6 p-8 bg-gray-900/50 rounded-lg text-center text-slate-500">
-                                    <p>No images were captured for this momænt.</p>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="p-8 flex justify-end gap-4 border-t border-white/10 flex-shrink-0">
-                            <button onClick={handleDiscard} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-6 rounded-full transition-colors flex items-center gap-2"><Trash2 className="w-5 h-5"/> Discard</button>
-                            <button onClick={handleSaveMoment} className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-6 rounded-full transition-colors flex items-center gap-2"><Save className="w-5 h-5"/> Save to Timestream</button>
+                <div className="p-8 overflow-y-auto space-y-6">
+                     <div>
+                        <h3 className="text-3xl font-bold text-white font-brand mb-3">{generatedMoment.title}</h3>
+                        <div className="prose prose-invert prose-p:text-slate-300 prose-lg max-w-none leading-relaxed">
+                            <p>{generatedMoment.story}</p>
                         </div>
                     </div>
-                );
-            case 'error':
-                 return (
-                    <div className="text-center">
-                        <h2 className="text-3xl font-bold text-red-400 font-brand">An Error Occurred</h2>
-                        <p className="text-slate-400 mt-2 mb-6">{errorMessage}</p>
-                        <button onClick={handleDiscard} className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-6 rounded-full transition-colors">Try Again</button>
+                    
+                    <div className="flex flex-wrap gap-2">
+                        {generatedMoment.tags.location.map(t => <span key={t} className="px-3 py-1 rounded-full bg-slate-700/50 text-slate-300 text-xs font-medium flex items-center gap-1"><MapPin size={10}/> {t}</span>)}
+                        {generatedMoment.tags.people.map(t => <span key={t} className="px-3 py-1 rounded-full bg-slate-700/50 text-slate-300 text-xs font-medium flex items-center gap-1"><Users size={10}/> {t}</span>)}
                     </div>
-                );
-            default:
-                return null;
-        }
-    }
 
+                    {hasImages && (
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mt-4">
+                            {capturedImagesRef.current.map((img, index) => (
+                                <div key={index} className="aspect-square rounded-xl overflow-hidden shadow-lg ring-1 ring-white/10">
+                                    <img 
+                                        src={`data:${img.mimeType};base64,${img.data}`} 
+                                        alt={`Captured moment ${index + 1}`} 
+                                        className="w-full h-full object-cover" 
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                
+                <div className="p-6 flex justify-end gap-4 border-t border-white/10 bg-slate-900/30 rounded-b-3xl">
+                    <button onClick={handleDiscard} className="text-slate-400 hover:text-red-400 px-6 py-3 font-semibold transition-colors flex items-center gap-2"><Trash2 className="w-4 h-4"/> Discard</button>
+                    <button onClick={handleSaveMoment} className="bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg shadow-cyan-500/20"><Save className="w-4 h-4"/> Save to Timestream</button>
+                </div>
+            </div>
+        );
+    };
+
+    const renderError = () => (
+         <div className="text-center animate-fade-in">
+            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6 ring-1 ring-red-500/30">
+                <Bot className="w-10 h-10 text-red-400" />
+            </div>
+            <h2 className="text-3xl font-bold text-white font-brand mb-2">Connection Interrupted</h2>
+            <p className="text-slate-400 mb-8 max-w-md mx-auto">{errorMessage}</p>
+            <button onClick={handleDiscard} className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-full transition-colors">Return to Studio</button>
+        </div>
+    );
+
+    const renderProcessing = () => (
+         <div className="text-center animate-fade-in">
+             <div className="relative w-32 h-32 mx-auto mb-8">
+                 <div className="absolute inset-0 rounded-full border-4 border-slate-800"></div>
+                 <div className="absolute inset-0 rounded-full border-4 border-t-cyan-500 animate-spin"></div>
+                 <div className="absolute inset-0 rounded-full flex items-center justify-center">
+                    <Bot className="w-12 h-12 text-cyan-400 animate-pulse" />
+                 </div>
+            </div>
+            <h2 className="text-4xl font-bold text-white font-brand mb-4">Weaving Reality...</h2>
+            <p className="text-slate-400 text-lg max-w-md mx-auto">æterny is synthesizing your audio, visuals, and context into a timeless memory.</p>
+            
+            {capturedImagesRef.current.length > 0 && (
+                 <div className="mt-8 h-16 flex justify-center gap-2 opacity-50">
+                      {/* Tiny visual indicator of captured frames being processed */}
+                     {[0,1,2].map(i => (
+                         <div key={i} className="w-12 h-16 rounded bg-slate-700 animate-pulse" style={{animationDelay: `${i*0.2}s`}}></div>
+                     ))}
+                 </div>
+            )}
+        </div>
+    );
+
+    // The main capture interface
     return (
-        <div className="container mx-auto px-6 pt-28 pb-8 min-h-[80vh] flex flex-col items-center justify-center animate-fade-in-up">
-            <canvas ref={canvasRef} className="hidden"></canvas>
-            {renderContent()}
+        <div className="relative w-full h-screen bg-slate-950 overflow-hidden flex flex-col items-center justify-center">
+             <canvas ref={canvasRef} className="hidden"></canvas>
+             
+             {/* Background Ambiance */}
+             <div className="absolute inset-0 pointer-events-none">
+                 <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/10 rounded-full blur-[120px] transition-all duration-1000 ${pageState === 'recording' ? 'scale-110 opacity-30' : 'scale-100 opacity-10'}`}></div>
+             </div>
+
+             {/* Main Stage */}
+             <div className="relative z-10 w-full h-full flex items-center justify-center p-6">
+                 {pageState === 'idle' && (
+                     <div className="flex flex-col items-center gap-12 animate-fade-in-up">
+                         <div className="text-center space-y-2">
+                             <h1 className="text-5xl md:text-7xl font-bold text-white font-brand tracking-tight">Capture the Now</h1>
+                             <p className="text-slate-400 text-lg">Select your senses.</p>
+                         </div>
+
+                         {/* Sensor Control Bar */}
+                         <div className="flex gap-6 flex-wrap justify-center">
+                             <SensorButton active={isVoiceEnabled} icon={Mic} offIcon={MicOff} label="Voice" onClick={() => setIsVoiceEnabled(!isVoiceEnabled)} />
+                             <SensorButton active={isCameraEnabled} icon={Camera} offIcon={VideoOff} label="Camera" onClick={() => setIsCameraEnabled(!isCameraEnabled)} />
+                             <SensorButton active={isLocationEnabled} icon={MapPin} offIcon={MapPinOff} label="Location" onClick={() => setIsLocationEnabled(!isLocationEnabled)} />
+                             <SensorButton active={isJointSession} icon={Users} offIcon={UserPlus} label="Joint" onClick={toggleJointSession} />
+                         </div>
+
+                         {/* Big Action Button */}
+                         <button 
+                            onClick={startRecording}
+                            disabled={!isVoiceEnabled && !isCameraEnabled}
+                            className="group relative w-32 h-32 rounded-full flex items-center justify-center transition-all duration-500 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                             <div className="absolute inset-0 bg-gradient-to-tr from-cyan-600 to-blue-600 rounded-full opacity-80 blur-md group-hover:opacity-100 group-hover:blur-lg transition-all duration-500"></div>
+                             <div className="absolute inset-1 bg-slate-950 rounded-full flex items-center justify-center ring-1 ring-white/10">
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.4)] group-hover:shadow-[0_0_50px_rgba(6,182,212,0.6)] transition-shadow duration-500">
+                                    <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center">
+                                        <div className="w-4 h-4 bg-white rounded-full shadow-[0_0_10px_white]"></div>
+                                    </div>
+                                </div>
+                             </div>
+                         </button>
+                     </div>
+                 )}
+
+                 {pageState === 'recording' && (
+                     <div className="relative w-full h-full max-w-5xl max-h-[85vh] flex flex-col rounded-3xl overflow-hidden bg-black ring-1 ring-white/10 shadow-2xl animate-fade-in">
+                         {/* Camera / Audio Visualizer Area */}
+                         <div className="relative flex-grow bg-slate-900 flex items-center justify-center overflow-hidden">
+                             {isCameraEnabled ? (
+                                 <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+                             ) : (
+                                 <div className="flex flex-col items-center gap-8">
+                                     {/* Breathing Orb for Audio */}
+                                     <div className="relative w-64 h-64 flex items-center justify-center">
+                                         <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{animationDuration: '2s'}}></div>
+                                         <div className="w-32 h-32 bg-gradient-to-tr from-cyan-500/40 to-blue-500/40 rounded-full backdrop-blur-md ring-1 ring-white/20 flex items-center justify-center">
+                                             <Mic className="w-12 h-12 text-white" />
+                                         </div>
+                                     </div>
+                                     <p className="text-slate-500 uppercase tracking-widest text-xs font-bold">Listening</p>
+                                 </div>
+                             )}
+
+                             {/* Live Transcription Overlay */}
+                             {isVoiceEnabled && (
+                                 <div className="absolute bottom-0 left-0 right-0 p-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent pt-32 pointer-events-none flex flex-col justify-end min-h-[300px]">
+                                     <div className="max-w-3xl mx-auto text-center">
+                                        <p className="text-2xl md:text-3xl font-medium text-white/90 leading-relaxed drop-shadow-lg transition-all duration-300">
+                                            {transcribedText ? `"${transcribedText}"` : <span className="opacity-50">...</span>}
+                                        </p>
+                                     </div>
+                                 </div>
+                             )}
+
+                             {/* Status Indicators */}
+                             <div className="absolute top-6 left-6 flex gap-3 flex-wrap">
+                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 text-red-400 rounded-full backdrop-blur-md border border-red-500/30">
+                                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                     <span className="text-xs font-bold uppercase tracking-wider">Recording</span>
+                                 </div>
+                                 {isLocationEnabled && (
+                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 text-white/70 rounded-full backdrop-blur-md border border-white/10">
+                                         <MapPin className="w-3 h-3" />
+                                         <span className="text-xs font-bold uppercase tracking-wider">Locating</span>
+                                     </div>
+                                 )}
+                                 {isJointSession && jointPartner && (
+                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/20 text-indigo-300 rounded-full backdrop-blur-md border border-indigo-500/30">
+                                         <Users className="w-3 h-3" />
+                                         <span className="text-xs font-bold uppercase tracking-wider">With {jointPartner}</span>
+                                     </div>
+                                 )}
+                             </div>
+                         </div>
+
+                         {/* Bottom Controls */}
+                         <div className="h-24 bg-black/80 backdrop-blur-xl border-t border-white/10 flex items-center justify-center relative z-20">
+                             <button 
+                                onClick={stopRecording}
+                                className="group flex flex-col items-center gap-1"
+                             >
+                                 <div className="w-16 h-16 rounded-full border-4 border-white/20 flex items-center justify-center transition-all duration-300 group-hover:border-red-500/50 group-hover:bg-red-500/10">
+                                     <div className="w-6 h-6 bg-red-500 rounded-md shadow-[0_0_15px_#ef4444]"></div>
+                                 </div>
+                             </button>
+                         </div>
+                     </div>
+                 )}
+
+                 {pageState === 'processing' && renderProcessing()}
+                 {pageState === 'review' && renderReview()}
+                 {pageState === 'error' && renderError()}
+             </div>
         </div>
     );
 };

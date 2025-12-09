@@ -1,19 +1,8 @@
-
 import React from 'react';
 
 const ApplePhotosIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg viewBox="0 0 120 120" {...props}>
-        <defs>
-            <path id="petal" d="M60,60 C30,0 90,0 60,60" />
-        </defs>
-        <use href="#petal" fill="#F55264" transform="rotate(0, 60, 60)" />
-        <use href="#petal" fill="#F87932" transform="rotate(45, 60, 60)" />
-        <use href="#petal" fill="#FBE134" transform="rotate(90, 60, 60)" />
-        <use href="#petal" fill="#78C53C" transform="rotate(135, 60, 60)" />
-        <use href="#petal" fill="#32BFE2" transform="rotate(180, 60, 60)" />
-        <use href="#petal" fill="#2E86E5" transform="rotate(225, 60, 60)" />
-        <use href="#petal" fill="#9357E3" transform="rotate(270, 60, 60)" />
-        <use href="#petal" fill="#D9408D" transform="rotate(315, 60, 60)" />
+    <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <path d="M18.71,19.46a4,4,0,0,1-2.67,1.38,3.75,3.75,0,0,1-3-1.6,1,1,0,0,0-1.42,0,3.66,3.66,0,0,1-3-1.55,4.2,4.2,0,0,1-1-3.21c0-2.52,2.15-3.69,4.23-3.75a3.86,3.86,0,0,1,2.85,1.1,1,1,0,0,0,1.35,0,3.58,3.58,0,0,1,2.56-1.1c.21,0,.41,0,.61,0a4,4,0,0,1,2.3,1.33A3.7,3.7,0,0,1,18.71,19.46ZM13,5.1a4,4,0,0,0-1.65,3.18,3.57,3.57,0,0,0,1.19,2.83,3.85,3.85,0,0,0,3-1.21A4.27,4.27,0,0,0,14.28,5.2,4.07,4.07,0,0,0,13,5.1Z" />
     </svg>
 );
 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Page, UserTier } from '../types';
 import { ArrowLeft, BookOpen, FilePenLine, BookImage, CheckCircle, ExternalLink, UploadCloud } from 'lucide-react';
@@ -20,13 +21,10 @@ interface FeatureCardProps {
 }
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, image, page, userTier, onNavigate, isCoreFeature = false, isVision = false }) => {
-    const isLegacyOnlyFeature = [Page.Journaling].includes(page);
-    const canCreate = userTier !== 'free';
-    const hasAccess = isLegacyOnlyFeature ? userTier === 'legacy' : canCreate;
-
-
+    const isLegacyUser = userTier === 'legacy';
+    
     const handleButtonClick = () => {
-        if (hasAccess) {
+        if (isLegacyUser) {
             onNavigate(page);
         } else {
             onNavigate(Page.Subscription);
@@ -36,21 +34,6 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
     const ringColor = isVision ? 'ring-purple-500/50' : 'ring-white/10';
     const iconColor = isVision ? 'text-purple-300' : 'text-cyan-400';
     const iconBg = isVision ? 'bg-purple-500/10' : 'bg-cyan-500/10';
-
-    let buttonText = 'Upgrade to Essæntial to Create';
-    let buttonClass = 'bg-cyan-600 hover:bg-cyan-500 text-white';
-
-    if (hasAccess) {
-        buttonText = 'Open Studio';
-        buttonClass = 'bg-slate-700 hover:bg-slate-600 text-white';
-        if (isVision) {
-            buttonText = 'Request Consultation';
-            buttonClass = 'bg-purple-600 hover:bg-purple-500 text-white';
-        }
-    } else if (isLegacyOnlyFeature) {
-        buttonText = 'Upgrade to Lægacy';
-        buttonClass = 'bg-amber-600 hover:bg-amber-500 text-white';
-    }
 
     return (
         <div className={`bg-gray-800/50 rounded-2xl ring-1 ${ringColor} overflow-hidden flex flex-col`}>
@@ -66,10 +49,21 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
                      {isVision && <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">Vision</span>}
                 </div>
                 <p className="text-slate-400 text-sm mb-6 flex-grow">{description}</p>
-                <button onClick={handleButtonClick} className={`w-full mt-auto ${buttonClass} font-bold py-2 rounded-full text-sm transition-colors flex items-center justify-center gap-2`}>
-                    {buttonText}
-                    {hasAccess && !isVision && <ExternalLink className="w-4 h-4" />}
-                </button>
+                {isLegacyUser ? (
+                    isCoreFeature ? (
+                         <button onClick={handleButtonClick} className="w-full mt-auto bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-full text-sm transition-colors flex items-center justify-center gap-2">
+                           Open <ExternalLink className="w-4 h-4" />
+                        </button>
+                    ) : (
+                         <button onClick={handleButtonClick} className={`w-full mt-auto ${isVision ? 'bg-purple-600 hover:bg-purple-500' : 'bg-amber-600 hover:bg-amber-500'} text-white font-bold py-2 rounded-full text-sm transition-colors`}>
+                            {isVision ? 'Request Consultation' : 'Design & Purchase'}
+                        </button>
+                    )
+                ) : (
+                    <button onClick={handleButtonClick} className="w-full mt-auto bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-full text-sm transition-colors">
+                        Upgrade to Lægacy to Unlock
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -93,16 +87,17 @@ const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, userTier }) => {
             icon={UploadCloud}
             title="Bulk Upload"
             description="Let æterny bring order to your chaos. Upload your entire archive and let our AI analyze, declutter, and curate your story for you."
-            image="https://images.pexels.com/photos/1995842/pexels-photo-1995842.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+            image="https://images.pexels.com/photos/1575845/pexels-photo-1575845.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
             onNavigate={onNavigate}
             userTier={userTier}
             page={Page.BulkUpload}
+            isCoreFeature={true}
         />
         <FeatureCard
             icon={BookOpen}
             title="æternacy Magazine"
             description="Receive a quarterly, interactive digital magazine curated from your best moments. A stunning, shareable summary of your life's recent chapters."
-            image="https://images.pexels.com/photos/4145354/pexels-photo-4145354.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+            image="https://images.pexels.com/photos/267569/pexels-photo-267569.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
             onNavigate={onNavigate}
             userTier={userTier}
             page={Page.Magazine}
@@ -111,7 +106,7 @@ const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, userTier }) => {
             icon={FilePenLine}
             title="Instant Journaling"
             description="Capture fleeting thoughts and moments throughout your day. æterny automatically tracks and curates your experiences into a daily story."
-            image="https://images.pexels.com/photos/4458522/pexels-photo-4458522.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+            image="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
             onNavigate={onNavigate}
             userTier={userTier}
             page={Page.Journaling}
@@ -120,7 +115,7 @@ const ShopPage: React.FC<ShopPageProps> = ({ onNavigate, userTier }) => {
             icon={BookImage}
             title="Premium Photobooks"
             description="Turn your digital legacy into a tangible heirloom. Create stunning, museum-quality photobooks from your curated moments, designed by æterny."
-            image="https://images.pexels.com/photos/1906435/pexels-photo-1906435.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+            image="https://images.pexels.com/photos/4145354/pexels-photo-4145354.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
             onNavigate={onNavigate}
             userTier={userTier}
             page={Page.Photobook}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Page, SuggestedMoment, SuggestedPhoto } from '../types';
 import { ArrowLeft, Edit, Trash2, Check, X, Wand2, Bot } from 'lucide-react';
@@ -94,7 +95,7 @@ const BulkUploadReviewPage: React.FC<BulkUploadReviewPageProps> = ({ onNavigate 
                 <Bot className="w-8 h-8 text-cyan-400" />
             </div>
             <div>
-                <h1 className="text-4xl md:text-5xl font-bold text-white font-brand">Curator's Studio</h1>
+                <h1 className="text-4xl md:text-5xl font-bold text-white font-brand">Archive Review</h1>
                 <p className="text-slate-400 mt-2">æterny has analyzed your archive. Review the suggestions below before adding them to your timestream.</p>
             </div>
         </div>

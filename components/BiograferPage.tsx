@@ -1,185 +1,244 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Page, UserTier, Message } from '../types';
-import { ArrowLeft, BookText, Briefcase, GitBranch, HeartCrack, Mic, Users, X, Send, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Page } from '../types';
+import { ArrowLeft, Book, Mic, Video, Coffee, Feather, Play, CheckCircle, Lock, Sparkles, Headphones, Star } from 'lucide-react';
 import { TOKEN_COSTS } from '../services/costCatalog';
-import Tooltip from './Tooltip';
-import LegacyLandingPage from './LegacyLandingPage';
-// FIX: Corrected function name to startBiographerTextChat as startBiographerChat is not exported.
-import { startBiographerTextChat, continueAeternyChat } from '../services/geminiService';
-import { Chat } from '@google/genai';
 
 interface BiograferPageProps {
   onBack: () => void;
   triggerConfirmation: (cost: number, featureKey: string, onConfirm: () => Promise<any>, message?: string) => void;
-  userTier: UserTier;
-  onNavigate: (page: Page) => void;
 }
 
-const sessions = [
-    { id: 'family', title: 'Family & Roots', description: 'Explore your family history, relationships, and heritage.', icon: Users, completed: false },
-    { id: 'childhood', title: 'Childhood & Youth', description: 'Revisit the formative years and memories that shaped you.', icon: BookText, completed: false },
-    { id: 'career', title: 'Career & Ambitions', description: 'Reflect on your professional journey, milestones, and aspirations.', icon: Briefcase, completed: false },
-    { id: 'turning_points', title: 'Turning Points', description: 'Discuss the pivotal moments and decisions that defined your path.', icon: GitBranch, completed: false },
-    { id: 'love_loss', title: 'Love & Loss', description: 'Share stories of the most profound connections and farewells in your life.', icon: HeartCrack, completed: false }
+const tokenExplanation = `Biografær sessions use advanced conversational AI to interview you, transcribe your speech, and organize your memories into a coherent narrative structure in real-time.`;
+
+interface Session {
+    id: string;
+    title: string;
+    subtitle: string;
+    description: string;
+    duration: string;
+    icon: React.ElementType;
+    status: 'completed' | 'current' | 'locked';
+}
+
+const lifeChapters: Session[] = [
+    { 
+        id: 'roots', 
+        title: 'Roots & Origins', 
+        subtitle: 'Chapter I',
+        description: 'Where do you come from? Let’s talk about your grandparents, family lore, and the home you were born into.', 
+        duration: '15 min',
+        icon: Feather, 
+        status: 'completed' 
+    },
+    { 
+        id: 'childhood', 
+        title: 'Early Years', 
+        subtitle: 'Chapter II',
+        description: 'The smell of your childhood kitchen, your favorite toy, the street you grew up on. The foundations of you.', 
+        duration: '15 min',
+        icon: Sparkles, 
+        status: 'current' 
+    },
+    { 
+        id: 'youth', 
+        title: 'Coming of Age', 
+        subtitle: 'Chapter III',
+        description: 'First loves, first heartbreaks, teenage rebellion, and the moment you felt you became an adult.', 
+        duration: '20 min',
+        icon: Play, 
+        status: 'locked' 
+    },
+    { 
+        id: 'career', 
+        title: 'Building a Life', 
+        subtitle: 'Chapter IV',
+        description: 'Ambitions, career paths, building a family, and the turning points that defined your journey.', 
+        duration: '20 min',
+        icon: Coffee, 
+        status: 'locked' 
+    },
+    { 
+        id: 'wisdom', 
+        title: 'Wisdom & Legacy', 
+        subtitle: 'Chapter V',
+        description: 'Reflections on what matters most, lessons learned, and the message you want to leave behind.', 
+        duration: '15 min',
+        icon: Book, 
+        status: 'locked' 
+    }
 ];
 
-// Chat Interface Component
-const BiographerChat: React.FC<{ topic: string; onClose: () => void }> = ({ topic, onClose }) => {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const chatRef = useRef<Chat | null>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+const BiograferPage: React.FC<BiograferPageProps> = ({ onBack, triggerConfirmation }) => {
 
-    useEffect(() => {
-        const initChat = async () => {
-            setIsLoading(true);
-            try {
-                // FIX: Corrected function call from `startBiographerChat` to the exported `startBiographerTextChat`.
-                const { chat, initialMessage } = await startBiographerTextChat(topic);
-                chatRef.current = chat;
-                setMessages([{ sender: 'ai', text: initialMessage }]);
-            } catch (e) {
-                setMessages([{ sender: 'ai', text: "I'm having trouble connecting. Please try again later." }]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        initChat();
-    }, [topic]);
+  // Calculate progress
+  const completedCount = lifeChapters.filter(s => s.status === 'completed').length;
+  const progressPercentage = (completedCount / lifeChapters.length) * 100;
+  
+  const handleBeginSession = (chapter: Session) => {
+    if (chapter.status === 'locked') return;
+    
+    triggerConfirmation(TOKEN_COSTS.BIOGRAFER_SESSION, 'BIOGRAFER_SESSION', async () => {
+      // Simulation of starting the interview interface
+      await new Promise(resolve => setTimeout(resolve, 800));
+      alert(`Starting Session: ${chapter.title}. æterny is ready to listen.`);
+    }, `Start the "${chapter.title}" interview session?`);
+  };
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+  return (
+    <div className="bg-slate-950 min-h-screen text-slate-200 animate-fade-in-up">
+      {/* Navigation Header */}
+      <div className="container mx-auto px-6 pt-28 pb-8">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 group">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
+            <span>Back to Lægacy Space</span>
+        </button>
 
-    const handleSend = async () => {
-        if (!input.trim() || isLoading || !chatRef.current) return;
-        
-        const userMsg: Message = { sender: 'user', text: input };
-        setMessages(prev => [...prev, userMsg]);
-        setInput('');
-        setIsLoading(true);
-
-        try {
-            const response = await continueAeternyChat(chatRef.current, userMsg.text);
-            setMessages(prev => [...prev, { sender: 'ai', text: response }]);
-        } catch (e) {
-            setMessages(prev => [...prev, { sender: 'ai', text: "I encountered an error. Please continue." }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-            <div className="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col ring-1 ring-white/10">
-                <div className="p-4 border-b border-slate-700 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-white font-brand">Interview: {topic}</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-white"><X /></button>
-                </div>
-                <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                    {messages.map((msg, i) => (
-                        <div key={i} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-cyan-600 text-white rounded-br-none' : 'bg-slate-700 text-slate-200 rounded-bl-none'}`}>
-                                {msg.text}
-                            </div>
-                        </div>
-                    ))}
-                    {isLoading && (
-                        <div className="flex items-center gap-2 text-slate-400 text-xs ml-4">
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                            æterny is thinking...
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-                <div className="p-4 border-t border-slate-700 flex gap-2">
-                    <input 
-                        type="text" 
-                        value={input} 
-                        onChange={e => setInput(e.target.value)} 
-                        onKeyPress={e => e.key === 'Enter' && handleSend()}
-                        placeholder="Type your answer..." 
-                        className="flex-grow bg-slate-900 border border-slate-600 rounded-full px-4 py-2 text-white focus:ring-cyan-500 focus:border-cyan-500 focus:outline-none"
-                        disabled={isLoading}
-                    />
-                    <button onClick={handleSend} disabled={isLoading || !input.trim()} className="bg-cyan-600 hover:bg-cyan-500 text-white p-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed">
-                        <Send className="w-5 h-5" />
-                    </button>
-                </div>
+        {/* Emotional Hero */}
+        <div className="relative rounded-3xl overflow-hidden bg-slate-900 ring-1 ring-white/10 mb-16">
+            <div className="absolute inset-0">
+                <img src="https://images.pexels.com/photos/3772612/pexels-photo-3772612.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Old microphone and letters" className="w-full h-full object-cover opacity-20" />
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-transparent"></div>
             </div>
-        </div>
-    );
-};
-
-const BiograferPage: React.FC<BiograferPageProps> = ({ onBack, triggerConfirmation, userTier, onNavigate }) => {
-    const [activeSession, setActiveSession] = useState<typeof sessions[0] | null>(null);
-
-    if (userTier !== 'legacy') {
-        return <LegacyLandingPage onNavigate={onNavigate} />;
-    }
-
-    const handleStartSession = (session: typeof sessions[0]) => {
-        triggerConfirmation(TOKEN_COSTS.BIOGRAFER_SESSION, 'BIOGRAFER_SESSION', async () => {
-            setActiveSession(session);
-        });
-    };
-
-    return (
-        <div className="bg-slate-900 -mt-20">
-             <section className="relative h-[60vh] flex items-center justify-center text-white text-center overflow-hidden">
-                <img src="https://images.pexels.com/photos/1036841/pexels-photo-1036841.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="A thoughtful person looking out a window" className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
-                <div className="relative z-10 p-6 animate-fade-in-up">
-                    <button onClick={onBack} className="absolute top-[-4rem] left-0 flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm ring-1 ring-white/20 text-white font-semibold py-2 px-4 rounded-full text-sm transition-all">
-                        <ArrowLeft className="w-4 h-4" /> Back to Lægacy Space
-                    </button>
-                    <h1 className="text-5xl md:text-7xl font-bold font-brand" style={{textShadow: '0 2px 15px rgba(0,0,0,0.5)'}}>Your Story, in Your Voice.</h1>
-                    <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mt-4" style={{textShadow: '0 2px 8px rgba(0,0,0,0.5)'}}>
-                    The Biografær is your personal interviewer, guiding you through the chapters of your life to create a rich, authentic autobiography.
-                    </p>
+            <div className="relative z-10 p-8 md:p-16 max-w-3xl">
+                <div className="flex gap-3 mb-6">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-900/30 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-widest">
+                        <Mic className="w-3 h-3" /> The Biografær
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-white/10 text-slate-300 text-xs font-bold uppercase tracking-widest">
+                         <Star className="w-3 h-3 text-amber-400" fill="currentColor" /> Premier Feature
+                    </div>
                 </div>
-            </section>
-
-            <div className="container mx-auto px-6 py-16">
-                <div className="bg-gray-800/50 p-8 rounded-3xl ring-1 ring-white/10">
-                    <h2 className="text-3xl font-bold font-brand text-white mb-8 text-center">Available Sessions</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {sessions.map(session => {
-                            const Icon = session.icon;
-                            return (
-                                <div key={session.id} className="bg-slate-700/50 p-6 rounded-2xl flex flex-col justify-between h-full hover:bg-slate-700 transition-colors">
-                                    <div>
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <div className="w-12 h-12 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                                                <Icon className="w-6 h-6 text-cyan-300" />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-white">{session.title}</h3>
-                                        </div>
-                                        <p className="text-slate-300 text-sm mb-6">{session.description}</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => handleStartSession(session)}
-                                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                                    >
-                                        <Mic className="w-4 h-4" /> Start Interview
-                                    </button>
-                                </div>
-                            )
-                        })}
+                <h1 className="text-4xl md:text-6xl font-bold text-white font-brand mb-6 leading-tight">
+                    Your voice is the greatest inheritance.
+                </h1>
+                <p className="text-lg text-slate-300 leading-relaxed mb-8">
+                    You don't need to write a book. Just talk. æterny guides you through your life story in short, conversational sessions—capturing not just the facts, but the feeling, the laughter, and the wisdom.
+                </p>
+                
+                {/* Overall Progress */}
+                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 inline-block w-full max-w-md">
+                    <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                        <span>Biography Progress</span>
+                        <span>{Math.round(progressPercentage)}% Complete</span>
+                    </div>
+                    <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                        <div className="bg-amber-500 h-full transition-all duration-1000 ease-out" style={{ width: `${progressPercentage}%` }}></div>
                     </div>
                 </div>
             </div>
-            
-            {activeSession && (
-                <BiographerChat 
-                    topic={activeSession.title} 
-                    onClose={() => setActiveSession(null)} 
-                />
-            )}
         </div>
-    );
+
+        {/* The Guided Journey */}
+        <div className="max-w-5xl mx-auto mb-24">
+            <h2 className="text-2xl font-bold text-white font-brand mb-8 text-center">Your Journey Chapters</h2>
+            <div className="space-y-6">
+                {lifeChapters.map((chapter, index) => {
+                    const Icon = chapter.icon;
+                    const isLocked = chapter.status === 'locked';
+                    const isCompleted = chapter.status === 'completed';
+                    const isCurrent = chapter.status === 'current';
+
+                    return (
+                        <div 
+                            key={chapter.id}
+                            onClick={() => handleBeginSession(chapter)}
+                            className={`relative group rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 transition-all duration-300 border 
+                                ${isCurrent 
+                                    ? 'bg-gradient-to-r from-slate-800 to-slate-800/50 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.1)] scale-[1.02] cursor-pointer' 
+                                    : isCompleted 
+                                        ? 'bg-slate-900/50 border-white/5 opacity-75 hover:opacity-100 cursor-default'
+                                        : 'bg-slate-900/30 border-white/5 opacity-50 cursor-not-allowed'
+                                }`
+                            }
+                        >
+                            {/* Connector Line */}
+                            {index !== lifeChapters.length - 1 && (
+                                <div className="absolute left-8 md:left-[3.25rem] top-20 bottom-[-24px] w-0.5 bg-white/5 -z-10 hidden md:block"></div>
+                            )}
+
+                            {/* Icon / Status Indicator */}
+                            <div className={`flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center ring-4 ring-slate-950 relative z-10 
+                                ${isCompleted ? 'bg-green-500 text-slate-900' : isCurrent ? 'bg-amber-500 text-slate-900' : 'bg-slate-800 text-slate-500'}`}>
+                                {isCompleted ? <CheckCircle className="w-7 h-7" /> : isLocked ? <Lock className="w-6 h-6" /> : <Icon className="w-7 h-7" />}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-grow text-center md:text-left">
+                                <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                                    <span className={`text-xs font-bold uppercase tracking-widest ${isCurrent ? 'text-amber-400' : 'text-slate-500'}`}>{chapter.subtitle}</span>
+                                    {isCompleted && <span className="inline-block px-2 py-0.5 rounded bg-green-500/20 text-green-400 text-[10px] font-bold uppercase">Completed</span>}
+                                </div>
+                                <h3 className={`text-xl font-bold font-brand mb-2 ${isLocked ? 'text-slate-500' : 'text-white'}`}>{chapter.title}</h3>
+                                <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">{chapter.description}</p>
+                            </div>
+
+                            {/* Action Button */}
+                            <div className="flex-shrink-0">
+                                {isCurrent ? (
+                                    <button className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 px-6 rounded-full flex items-center gap-2 transition-all shadow-lg shadow-amber-900/20">
+                                        <Mic className="w-4 h-4" />
+                                        <span>Begin Session</span>
+                                        <span className="text-xs opacity-70 font-normal ml-1">({chapter.duration})</span>
+                                    </button>
+                                ) : isCompleted ? (
+                                    <button className="text-slate-400 hover:text-white font-semibold text-sm flex items-center gap-2">
+                                        Review <Play className="w-3 h-3" />
+                                    </button>
+                                ) : (
+                                    <span className="text-slate-600 text-sm font-medium flex items-center gap-2"><Lock className="w-3 h-3"/> Locked</span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+
+        {/* The "Why" - Artifact Teasers */}
+        <div className="border-t border-white/10 bg-slate-900/50 py-20">
+            <div className="container mx-auto px-6">
+                <div className="text-center max-w-3xl mx-auto mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold text-white font-brand mb-4">Turn Your Story Into Art</h2>
+                    <p className="text-slate-400">Your biography sessions aren't just recordings. æterny transforms them into tangible legacies.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    {/* Book */}
+                    <div className="bg-slate-800 p-8 rounded-2xl border border-white/5 hover:border-amber-500/30 transition-all group text-center">
+                        <div className="w-16 h-16 mx-auto bg-slate-700 rounded-full flex items-center justify-center mb-6 group-hover:bg-amber-500/10 transition-colors">
+                            <Book className="w-8 h-8 text-slate-300 group-hover:text-amber-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white font-brand mb-2">The Memoir</h3>
+                        <p className="text-sm text-slate-400 mb-6">A beautifully bound hardcover book, written in your voice, illustrated with your photos.</p>
+                        <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">Print on Demand</span>
+                    </div>
+
+                    {/* Audio */}
+                    <div className="bg-slate-800 p-8 rounded-2xl border border-white/5 hover:border-cyan-500/30 transition-all group text-center">
+                        <div className="w-16 h-16 mx-auto bg-slate-700 rounded-full flex items-center justify-center mb-6 group-hover:bg-cyan-500/10 transition-colors">
+                            <Headphones className="w-8 h-8 text-slate-300 group-hover:text-cyan-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white font-brand mb-2">The Audio Series</h3>
+                        <p className="text-sm text-slate-400 mb-6">An edited, podcast-style audio series of your life, enhanced with music and soundscapes.</p>
+                        <span className="text-xs font-bold text-cyan-500 uppercase tracking-wider">Coming Soon</span>
+                    </div>
+
+                    {/* Video */}
+                    <div className="bg-slate-800 p-8 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-all group text-center">
+                        <div className="w-16 h-16 mx-auto bg-slate-700 rounded-full flex items-center justify-center mb-6 group-hover:bg-purple-500/10 transition-colors">
+                            <Video className="w-8 h-8 text-slate-300 group-hover:text-purple-400" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white font-brand mb-2">The Documentary</h3>
+                        <p className="text-sm text-slate-400 mb-6">A cinematic video combining your interview audio with your photo archive and AI visuals.</p>
+                        <span className="text-xs font-bold text-purple-500 uppercase tracking-wider">Coming Soon</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default BiograferPage;

@@ -11,11 +11,11 @@ const PhotobookPage: React.FC<PhotobookPageProps> = ({ onNavigate }) => {
     <div className="animate-fade-in-up">
       <section className="relative h-[50vh] flex items-center justify-center text-white text-center overflow-hidden">
         <div className="absolute inset-0 bg-black">
-          <img src="https://images.pexels.com/photos/1906435/pexels-photo-1906435.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Photobook background" className="w-full h-full object-cover opacity-40" />
+          <img src="https://images.pexels.com/photos/4145354/pexels-photo-4145354.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Photobook background" className="w-full h-full object-cover opacity-40" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
         <div className="relative z-10 p-6">
-          <button onClick={() => onNavigate(Page.Shop)} className="absolute top-[-4rem] left-0 flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm ring-1 ring-white/20 text-white font-semibold py-2 px-4 rounded-full text-sm transition-all">
+          <button onClick={() => onNavigate(Page.Profile)} className="absolute top-[-4rem] left-0 flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm ring-1 ring-white/20 text-white font-semibold py-2 px-4 rounded-full text-sm transition-all">
             <ArrowLeft className="w-4 h-4" /> Back to Features
           </button>
           <h1 className="text-5xl md:text-7xl font-bold font-brand" style={{textShadow: '0 2px 15px rgba(0,0,0,0.5)'}}>Premium Photobooks</h1>
@@ -45,7 +45,7 @@ const PhotobookPage: React.FC<PhotobookPageProps> = ({ onNavigate }) => {
         </div>
 
         <div className="relative w-full aspect-video max-w-4xl mx-auto">
-             <img src="https://images.pexels.com/photos/7649234/pexels-photo-7649234.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Photobook mockup" className="w-full h-full object-cover rounded-lg shadow-2xl"/>
+             <img src="https://images.pexels.com/photos/1906435/pexels-photo-1906435.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Photobook mockup" className="w-full h-full object-cover rounded-lg shadow-2xl"/>
         </div>
         
         <div className="mt-20 text-center bg-gray-800/50 rounded-2xl ring-1 ring-white/10 p-12 max-w-3xl mx-auto">

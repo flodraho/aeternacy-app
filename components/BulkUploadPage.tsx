@@ -24,15 +24,29 @@ const Step: React.FC<{ icon: React.ElementType, title: string, description: stri
 const BulkUploadPage: React.FC<BulkUploadPageProps> = ({ onNavigate, userTier, triggerConfirmation }) => {
     const [photoCount, setPhotoCount] = useState(5000);
     const [isProcessing, setIsProcessing] = useState(false);
+    const isLegacyUser = userTier === 'legacy';
+
+    const calculatedCost = Math.ceil(photoCount / 1000) * TOKEN_COSTS.BULK_UPLOAD_PER_1000;
 
     const handleUpload = async () => {
         setIsProcessing(true);
         // Mock upload and analysis action
         await new Promise(resolve => setTimeout(resolve, 5000));
+        console.log(`TELEMETRY: token_spend_ok, feature: BULK_UPLOAD, cost: ${isLegacyUser ? 0 : calculatedCost}`);
         setIsProcessing(false);
         onNavigate(Page.BulkUploadReview);
     };
-
+    
+    const handleTriggerUpload = () => {
+        if (isLegacyUser) {
+             const message = `This will analyze approximately ${photoCount.toLocaleString()} photos and use your annual credits.`;
+             triggerConfirmation(0, 'BULK_UPLOAD', handleUpload, message); // Cost is 0 if using credits
+        } else {
+            const message = `This will analyze approximately ${photoCount.toLocaleString()} photos.`;
+            triggerConfirmation(calculatedCost, 'BULK_UPLOAD', handleUpload, message);
+        }
+    };
+    
     if (isProcessing) {
         return (
             <div className="min-h-screen -mt-20 flex flex-col items-center justify-center text-center p-6">
@@ -44,33 +58,19 @@ const BulkUploadPage: React.FC<BulkUploadPageProps> = ({ onNavigate, userTier, t
     }
 
     const renderCTA = () => {
-        if (userTier === 'free') {
-            return (
-                <div className="container mx-auto px-6 text-center max-w-2xl">
-                    <h2 className="text-4xl font-bold font-brand text-white">Unlock Bulk Upload</h2>
-                    <p className="text-slate-300 mt-4">
-                        The Bulk Upload & Curation feature is available on all our paid plans. Upgrade to let æterny automatically organize your entire photo library.
-                    </p>
-                    <button onClick={() => onNavigate(Page.Subscription)} className="mt-8 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-full text-lg transition-all transform hover:scale-105">
-                        Upgrade Your Plan
-                    </button>
-                </div>
-            );
-        }
-
-        if (userTier === 'legacy') {
+        if (isLegacyUser) {
             return (
                 <div className="container mx-auto px-6 text-center max-w-2xl">
                     <h2 className="text-4xl font-bold font-brand text-white">Your Lægacy Credits</h2>
                     <p className="text-slate-300 mt-4">
-                        As a Lægacy member, your Bulk Uploads are covered by generous annual credits.
+                        As a Lægacy member, you receive a generous annual credit for photo analysis.
                     </p>
                     <div className="my-8 p-6 bg-slate-800/50 rounded-lg ring-1 ring-white/10 max-w-sm mx-auto">
                         <p className="text-sm text-amber-300 font-semibold">ANNUAL CREDITS REMAINING</p>
-                        <p className="text-5xl font-bold text-white mt-2">20,000 photos</p>
+                        <p className="text-5xl font-bold text-white mt-2">20,000</p>
                         <p className="text-xs text-slate-400">Resets on January 1, 2025</p>
                     </div>
-                    <button onClick={handleUpload} className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 px-8 rounded-full text-lg transition-all transform hover:scale-105 shadow-lg shadow-amber-500/20">
+                    <button onClick={handleTriggerUpload} className="bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 px-8 rounded-full text-lg transition-all transform hover:scale-105 shadow-lg shadow-amber-500/20">
                         Start Bulk Upload
                     </button>
                 </div>
@@ -81,10 +81,10 @@ const BulkUploadPage: React.FC<BulkUploadPageProps> = ({ onNavigate, userTier, t
             <div className="container mx-auto px-6 text-center max-w-2xl">
                 <h2 className="text-4xl font-bold font-brand text-white">Ready to Reclaim Your Memories?</h2>
                 <p className="text-slate-300 mt-4">
-                    As part of your subscription, Bulk Upload and AI Curation is included.
+                    Estimate the number of photos you want to upload. Cost is {TOKEN_COSTS.BULK_UPLOAD_PER_1000} Tokæn per 1,000 photos.
                 </p>
                 <div className="my-8 p-6 bg-slate-800/50 rounded-lg ring-1 ring-white/10 max-w-lg mx-auto">
-                    <label htmlFor="photo-count" className="text-sm text-slate-300">Estimate the number of photos to upload:</label>
+                    <label htmlFor="photo-count" className="text-sm text-slate-300">Estimated number of photos:</label>
                     <input 
                         id="photo-count"
                         type="range"
@@ -96,12 +96,11 @@ const BulkUploadPage: React.FC<BulkUploadPageProps> = ({ onNavigate, userTier, t
                         className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer my-4"
                     />
                      <p className="text-3xl font-bold text-white font-mono">{photoCount.toLocaleString()}</p>
-                     <div className="mt-2 h-6 flex items-center justify-center">
-                        <p className="text-lg text-cyan-400 font-semibold">Included in Your Plan</p>
-                    </div>
+                     <p className="text-lg text-cyan-400 font-semibold mt-2">Estimated Cost: <span className="font-mono">{calculatedCost.toLocaleString()}</span> Tokæn</p>
                 </div>
-                <button onClick={handleUpload} className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-full text-lg transition-all transform hover:scale-105">
-                    Start Bulk Upload
+
+                <button onClick={handleTriggerUpload} className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-full text-lg transition-all transform hover:scale-105">
+                    Continue to Upload
                 </button>
             </div>
         );
@@ -118,10 +117,9 @@ const BulkUploadPage: React.FC<BulkUploadPageProps> = ({ onNavigate, userTier, t
             </div>
             {/* Hero Section */}
             <section className="relative h-[70vh] flex items-center justify-center text-center overflow-hidden -mt-20">
-                <img src="https://images.pexels.com/photos/1995842/pexels-photo-1995842.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="A chaotic collage of polaroid photos" className="absolute inset-0 w-full h-full object-cover opacity-30" />
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 via-slate-900 to-slate-900"></div>
                 <div className="relative z-10 p-6">
-                <h1 className="text-5xl md:text-7xl font-bold font-brand text-white" style={{textShadow: '0 2px 20px rgba(0,0,0,0.7)' }}>Let æterny bring order to your chaos.</h1>
+                <h1 className="text-5xl md:text-7xl font-bold font-brand text-white" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.7)' }}>Let æterny bring order to your chaos.</h1>
                 <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mt-4 mb-8" style={{ textShadow: '0 1px 10px rgba(0,0,0,0.7)' }}>
                     Upload your entire photo archive — tens of thousands of images at once — and let æterny analyze, declutter, and curate your story for you.
                 </p>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Moment, AeternyVoice, AeternyStyle } from '../types';
 import { textToSpeech } from '../services/geminiService';
@@ -37,48 +36,13 @@ const LivingSlideshowPlayer: React.FC<LivingSlideshowPlayerProps> = ({ moment, a
     const slideTimerRef = useRef<number | null>(null);
     const progressFrameRef = useRef<number | null>(null);
 
-    const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null);
-    const [isLoadingVideo, setIsLoadingVideo] = useState(false);
-
-    useEffect(() => {
-        let objectUrl: string | undefined;
-        const videoUrl = moment.video;
-
-        const fetchVideo = async () => {
-            if (videoUrl && videoUrl.includes('generativelanguage.googleapis.com')) {
-                setIsLoadingVideo(true);
-                try {
-                    const response = await fetch(`${videoUrl}&key=${process.env.API_KEY}`);
-                    if (!response.ok) throw new Error(`Video fetch failed: ${response.statusText}`);
-                    const blob = await response.blob();
-                    objectUrl = URL.createObjectURL(blob);
-                    setVideoBlobUrl(objectUrl);
-                } catch (e) {
-                    console.error("Failed to load video", e);
-                    setVideoBlobUrl(null); // Or some error state
-                } finally {
-                    setIsLoadingVideo(false);
-                }
-            } else if (videoUrl) {
-                setVideoBlobUrl(videoUrl);
-            }
-        };
-
-        fetchVideo();
-
-        return () => {
-            if (objectUrl) URL.revokeObjectURL(objectUrl);
-        };
-    }, [moment.video]);
-
-
     const slides = useMemo(() => {
         const images = [moment.image, ...(moment.images || [])].filter(Boolean) as string[];
         if (moment.video) {
-            return [videoBlobUrl || 'loading', ...images];
+            return [moment.video, ...images];
         }
         return images;
-    }, [moment, videoBlobUrl]);
+    }, [moment]);
 
     const sentences = useMemo(() => {
         const text = moment.description;
@@ -144,20 +108,23 @@ const LivingSlideshowPlayer: React.FC<LivingSlideshowPlayerProps> = ({ moment, a
     useEffect(() => {
         if (slideTimerRef.current) clearTimeout(slideTimerRef.current);
         const currentSlide = slides[currentIndex];
-        const isVideo = currentIndex === 0 && moment.video;
+        const isVideo = currentSlide?.startsWith('blob:') || currentSlide?.endsWith('.mp4');
 
         if (isPlaying && !isNarrationOn && !isManuallyPaused) {
-            if (isVideo && videoRef.current) {
-                videoRef.current.onended = advanceSlide;
-                videoRef.current.play().catch(console.error);
-            } else if (!isVideo) {
+            if (isVideo) {
+                const video = videoRef.current;
+                if (video) {
+                    video.onended = advanceSlide;
+                    video.play().catch(console.error);
+                }
+            } else {
                 slideTimerRef.current = window.setTimeout(advanceSlide, 6000);
             }
         } else if (!isPlaying && !isNarrationOn) {
             if (isVideo) videoRef.current?.pause();
         }
 
-    }, [currentIndex, isPlaying, isNarrationOn, slides, advanceSlide, isManuallyPaused, moment.video]);
+    }, [currentIndex, isPlaying, isNarrationOn, slides, advanceSlide, isManuallyPaused]);
 
     // Effect for narrated playback
     useEffect(() => {
@@ -182,14 +149,14 @@ const LivingSlideshowPlayer: React.FC<LivingSlideshowPlayerProps> = ({ moment, a
                 setNarrationState('playing');
                 
                 let slideDuration = buffer.duration / slides.length;
-                if (moment.video && videoRef.current) {
-                    const videoDuration = videoRef.current.duration || 10;
-                    slideDuration = (buffer.duration - videoDuration) / (slides.length > 1 ? slides.length - 1 : 1);
+                if (slides[0]?.startsWith('blob:') || slides[0]?.endsWith('.mp4')) {
+                    // Give video more time
+                    slideDuration = (buffer.duration - (videoRef.current?.duration || 10)) / (slides.length - 1);
                 }
                 
                 const scheduleSlideChange = (index: number) => {
                     if (index < slides.length) {
-                        const isVideo = index === 0 && moment.video;
+                        const isVideo = slides[index-1]?.startsWith('blob:') || slides[index-1]?.endsWith('.mp4');
                         const duration = isVideo ? (videoRef.current?.duration || 10) : slideDuration;
                         slideTimerRef.current = window.setTimeout(() => {
                             setCurrentIndex(index);
@@ -230,22 +197,21 @@ const LivingSlideshowPlayer: React.FC<LivingSlideshowPlayerProps> = ({ moment, a
 
         playNarration();
 
-    }, [isPlaying, isNarrationOn, aeternyVoice, aeternyStyle, moment.description, slides, sentences, cleanup, isManuallyPaused, moment.video]);
+    }, [isPlaying, isNarrationOn, aeternyVoice, aeternyStyle, moment.description, slides, sentences, cleanup, isManuallyPaused]);
 
 
     return (
         <div className="fixed inset-0 bg-black z-[100] living-slideshow-player">
             {slides.map((slide, index) => {
-                const isVideo = index === 0 && moment.video;
+                const isVideo = slide.startsWith('blob:') || slide.endsWith('.mp4');
                 const isActive = index === currentIndex;
                 const animationClass = kenBurnsAnimations[index % kenBurnsAnimations.length];
 
                 if (isVideo) {
                     return (
                         <div key={index} className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
-                           {isLoadingVideo && <div className="w-full h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-white"/></div>}
-                           {videoBlobUrl && <video ref={videoRef} src={videoBlobUrl} muted playsInline className="w-full h-full object-cover" onLoadedData={(e) => { if (isActive && isPlaying) (e.target as HTMLVideoElement).play().catch(console.error); }}/>}
-                           {videoBlobUrl && <span className="video-watermark">æ</span>}
+                            <video ref={index === 0 ? videoRef : null} src={slide} muted playsInline className="w-full h-full object-cover" onLoadedData={(e) => { if (isActive && isPlaying) (e.target as HTMLVideoElement).play(); }}/>
+                            <span className="video-watermark">æ</span>
                         </div>
                     );
                 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Page, UserTier, Moment, Journey, AeternyStyle } from '../types';
 import { ArrowLeft, Check, Film, Loader2, Wand2, MonitorSmartphone, Clapperboard, Sparkles, X, Save } from 'lucide-react';
@@ -35,14 +36,8 @@ const AIVideoPage: React.FC<AIVideoPageProps> = (props) => {
 
     // Video Generation state
     const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
-    const [playableUrl, setPlayableUrl] = useState<string | null>(null);
-    const [isLoadingVideo, setIsLoadingVideo] = useState(false);
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [isKeySelected, setIsKeySelected] = useState(false);
-    
-    // Free tier state
-    const [freeCreationUsed, setFreeCreationUsed] = useState(localStorage.getItem('freeVideoCreationUsed') === 'true');
-
 
     useEffect(() => {
         const checkApiKey = async () => {
@@ -53,36 +48,6 @@ const AIVideoPage: React.FC<AIVideoPageProps> = (props) => {
         };
         checkApiKey();
     }, []);
-
-    useEffect(() => {
-        let objectUrl: string | undefined;
-        const fetchAndSetVideo = async () => {
-            if (generatedVideoUrl && generatedVideoUrl.includes('generativelanguage.googleapis.com')) {
-                setIsLoadingVideo(true);
-                setPlayableUrl(null);
-                try {
-                    const response = await fetch(`${generatedVideoUrl}&key=${process.env.API_KEY}`);
-                     if (!response.ok) {
-                        throw new Error(`Failed to fetch video: ${response.statusText}`);
-                    }
-                    const blob = await response.blob();
-                    objectUrl = URL.createObjectURL(blob);
-                    setPlayableUrl(objectUrl);
-                } catch (error) {
-                    console.error("Error fetching video:", error);
-                    setGenerationError("Could not load video for preview.");
-                } finally {
-                    setIsLoadingVideo(false);
-                }
-            }
-        };
-        fetchAndSetVideo();
-        return () => {
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
-        };
-    }, [generatedVideoUrl]);
 
     const handleGenerateScript = async () => {
         if (!selectedItem) return;
@@ -134,37 +99,20 @@ const AIVideoPage: React.FC<AIVideoPageProps> = (props) => {
             const url = await generateVideo(prompt, imagePayload, aspectRatio);
             setGeneratedVideoUrl(url);
             setPageState('review');
+            console.log(`TELEMETRY: token_spend_ok, feature: AI_VIDEO_REFLECTION, cost: ${TOKEN_COSTS.AI_VIDEO_REFLECTION}`);
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unknown error occurred.";
-            if (message.includes("Your API key may be invalid")) {
-                setIsKeySelected(false);
+            if (message.includes("Requested entity was not found") || message.includes("404") || message.includes("Your API key may be invalid")) {
+                setIsKeySelected(false); // Reset state so the user is prompted again
             }
             setGenerationError(message);
             setPageState('configure'); // Go back to config on error
-            throw error; // Re-throw to trigger token refund logic if applicable
+            throw error; // Re-throw to trigger refund
         }
     };
     
     const handleTriggerGeneration = () => {
-        if (userTier === 'free') {
-            if (freeCreationUsed) {
-                onNavigate(Page.Subscription);
-                return;
-            }
-            // First free creation - no token confirmation
-            handleStartGeneration()
-                .then(() => {
-                    localStorage.setItem('freeVideoCreationUsed', 'true');
-                    setFreeCreationUsed(true);
-                })
-                .catch((e) => {
-                    // Error is already set in handleStartGeneration
-                    console.error("Free generation failed", e);
-                });
-        } else {
-            // Paid user flow
-            triggerConfirmation(TOKEN_COSTS.AI_VIDEO_REFLECTION, 'AI_VIDEO_REFLECTION', handleStartGeneration);
-        }
+        triggerConfirmation(TOKEN_COSTS.AI_VIDEO_REFLECTION, 'AI_VIDEO_REFLECTION', handleStartGeneration);
     };
 
     const handleSaveVideo = () => {
@@ -184,25 +132,11 @@ const AIVideoPage: React.FC<AIVideoPageProps> = (props) => {
         setSelectedItem(null);
         setScript('');
         setGeneratedVideoUrl(null);
-        setPlayableUrl(null);
         setGenerationError(null);
     };
 
     const renderSelect = () => (
         <div className="space-y-8">
-            {userTier === 'free' && !freeCreationUsed && (
-                <div className="bg-green-900/40 p-6 rounded-2xl ring-1 ring-green-500/50 text-center">
-                    <h3 className="text-xl font-bold font-brand text-green-300">Welcome to the Video Studio!</h3>
-                    <p className="text-slate-300 mt-2">As a new member, your first AI Video Reflection is on us. Select a moment to get started.</p>
-                </div>
-            )}
-            {userTier === 'free' && freeCreationUsed && (
-                <div className="bg-amber-900/40 p-6 rounded-2xl ring-1 ring-amber-500/50 text-center">
-                    <h3 className="text-xl font-bold font-brand text-amber-300">You've used your free creation!</h3>
-                    <p className="text-slate-300 mt-2">Upgrade to a paid plan to create unlimited AI Video Reflections and unlock all creation tools.</p>
-                    <button onClick={() => onNavigate(Page.Subscription)} className="mt-4 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded-full">Upgrade Now</button>
-                </div>
-            )}
             <div>
                 <h2 className="text-2xl font-bold font-brand mb-4">Select a Momænt</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -299,15 +233,9 @@ const AIVideoPage: React.FC<AIVideoPageProps> = (props) => {
         <div className="text-center">
              <h2 className="text-3xl font-bold font-brand text-white mb-4">Your AI Video Reflection is Ready</h2>
              <div className="max-w-2xl mx-auto aspect-video bg-black rounded-lg overflow-hidden ring-1 ring-white/10">
-                {isLoadingVideo && (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                        <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                        <p>Loading video for preview...</p>
-                    </div>
-                )}
-                {playableUrl && (
+                {generatedVideoUrl && (
                     <div className="relative w-full h-full">
-                        <video src={playableUrl} controls autoPlay className="w-full h-full" />
+                        <video src={generatedVideoUrl} controls autoPlay className="w-full h-full" />
                         <span className="video-watermark">æ</span>
                     </div>
                 )}

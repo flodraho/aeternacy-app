@@ -1,6 +1,4 @@
 
-import React from "react";
-
 export enum Page {
   Landing,
   Home,
@@ -26,7 +24,6 @@ export enum Page {
   Magazine,
   Journaling,
   Photobook,
-  VRLab,
   Biografer,
   BulkUpload,
   AIVideo,
@@ -34,18 +31,13 @@ export enum Page {
   SmartCollection,
   TrustCenter,
   BulkUploadReview,
-  Gift,
-  FamilyTree,
-  ComparePlans,
-  FamilyRituals,
-  RitualDashboard,
-  Journal
+  Articles,
+  VRLab
 }
 
 export enum AuthMode {
   Login,
   Register,
-  ResetPassword,
 }
 
 export interface Message {
@@ -55,15 +47,15 @@ export interface Message {
 
 export type AiTier = 'diamond' | 'sparkle' | 'flash' | null;
 
-export type UserTier = 'free' | 'essæntial' | 'fæmily' | 'fæmilyPlus' | 'legacy';
+export type UserTier = 'free' | 'essæntial' | 'fæmily' | 'legacy';
 
 export type AeternyVoice = 'Kore' | 'Zephyr' | 'Charon' | 'Fenrir';
 export type AeternyStyle = 'Neutral' | 'Warm & Empathetic' | 'Humorous' | 'Formal';
 
 
 export type Moment = {
-  id: string;
-  type: 'standard' | 'focus' | 'insight' | 'collection' | 'fæmilyStoryline' | 'aeternySuggestion';
+  id: number;
+  type: 'standard' | 'focus' | 'insight' | 'collection' | 'fæmilyStoryline';
   aiTier: AiTier;
   pinned: boolean;
   image?: string;
@@ -94,30 +86,16 @@ export type Moment = {
   isLegacy?: boolean;
   createdBy?: string;
   comments?: { user: string; text: string; date: string }[];
-  suggestedMomentId?: string;
-  ritualId?: string;
 };
 
 export interface Journey {
-  id: string;
+  id: number;
   title: string;
   description: string;
-  momentIds: string[];
+  momentIds: number[];
   coverImage: string;
   collaborators?: string[];
   isLegacy?: boolean;
-}
-
-export interface FamilyTreeNode {
-  id: string;
-  name: string;
-  profilePic?: string;
-  spouse?: {
-    id: string;
-    name: string;
-    profilePic?: string;
-  };
-  children?: FamilyTreeNode[];
 }
 
 export interface PexelsPhoto {
@@ -158,7 +136,6 @@ export interface Steward {
   name: string;
   email: string;
   role: StewardRole;
-  status: 'Pending' | 'Active' | 'Certified';
 }
 
 export interface TokenState {
@@ -183,32 +160,3 @@ export type SuggestedMoment = {
   dateRange: string;
   photos: SuggestedPhoto[];
 };
-
-export interface TimeCapsule {
-  id: string;
-  name: string;
-  openDate: string;
-  recipient: string;
-  momentIds: string[];
-  status: 'Active' | 'Paused';
-}
-
-export interface RitualTemplate {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  iconName: string;
-  frequency: string;
-}
-
-export interface ActiveRitual {
-    id: string;
-    templateId: string;
-    title: string;
-    description: string;
-    iconName: string;
-    frequency: string;
-    progress: number;
-    participants: { id: string, name: string, avatar: string }[];
-}

@@ -1,3 +1,4 @@
+
 // services/costCatalog.ts
 
 /**
@@ -6,7 +7,7 @@
  */
 export const TOKEN_COSTS = {
   /** Cost to generate a short, animated "Living Photo" from a header image. */
-  HEADER_ANIMATION: 600,
+  HEADER_ANIMATION: 200,
   
   /** Cost to generate a full AI Video Reflection in the Video Studio. */
   AI_VIDEO_REFLECTION: 600,
@@ -21,8 +22,5 @@ export const TOKEN_COSTS = {
   BULK_UPLOAD_PER_1000: 900,
   
   /** Cost to generate a Legacy Letter and "seal" a Time Capsule. */
-  TIME_CAPSULE_SEAL: 200,
-  
-  /** Cost to weave multiple contributions in a Ritual into a single narrative story. */
-  RITUAL_STORY_WEAVING: 300,
+  TIME_CAPSULE_SEAL: 200
 };

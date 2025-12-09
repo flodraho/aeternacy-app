@@ -167,9 +167,9 @@ const FamilyMomentsPage: React.FC<FamilyMomentsPageProps> = (props) => {
             
             {familyView === 'moments' ? (
                 viewMode === 'grid' ? (
-                    <GridView moments={filteredAndSearchedMoments} onPinToggle={onPinToggle} onSelectMoment={onSelectMoment} onShare={(moment) => setShareTarget(moment)} onNavigate={onNavigate} newMomentId={newMomentId} deletingMomentId={deletingMomentId} />
+                    <GridView moments={filteredAndSearchedMoments} onPinToggle={onPinToggle} onSelectMoment={onSelectMoment} onShare={(moment) => setShareTarget(moment)} onNavigate={onNavigate} newMomentId={newMomentId} deletingMomentId={deletingMomentId} zoomLevel={2} />
                 ) : (
-                    <TimelineView moments={filteredAndSearchedMoments} onPinToggle={onPinToggle} onSelectMoment={onSelectMoment} onShare={(moment) => setShareTarget(moment)} newMomentId={newMomentId} deletingMomentId={deletingMomentId} onNavigate={onNavigate} />
+                    <TimelineView moments={filteredAndSearchedMoments} onPinToggle={onPinToggle} onSelectMoment={onSelectMoment} onShare={(moment) => setShareTarget(moment)} newMomentId={newMomentId} deletingMomentId={deletingMomentId} />
                 )
             ) : (
                 <div>

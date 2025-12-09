@@ -1,13 +1,11 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { UploadCloud, X, Loader2, Sparkles, Play, Pause, CheckCircle, MapPin, Users, Tag, GitBranch, Wand2, ArrowRight, Star, Speaker } from 'lucide-react';
+import { UploadCloud, X, Loader2, Sparkles, Play, Pause, CheckCircle, MapPin, Users, Tag, GitBranch, Wand2, ArrowRight, Star, Speaker, Zap, RefreshCw } from 'lucide-react';
 import { createDemoStoryFromImages, textToSpeech } from '../services/geminiService';
 import { AeternyVoice } from '../types';
 import { decodeAudioData } from '../utils/audio';
 import Slideshow from './Slideshow';
-import GooglePhotosIcon from './icons/GooglePhotosIcon';
-import ApplePhotosIcon from './icons/ApplePhotosIcon';
-import Tooltip from './Tooltip';
+import GoogleIcon from './icons/GoogleIcon';
 
 interface GeneratedData {
     title: string;
@@ -64,12 +62,12 @@ const voiceOptions: { name: string; voice: AeternyVoice; description: string }[]
 ];
 
 const processingSteps = [
-    { id: 'analyze', text: 'Analyzing photos & finding themes' },
-    { id: 'story', text: 'Writing your personal story' },
-    { id: 'narration', text: 'Voicing your personal story' }
+    { id: 'analyze', text: 'Scanning visual details & context...' },
+    { id: 'story', text: 'Weaving the narrative arc...' },
+    { id: 'narration', text: 'Recording voiceover...' }
 ];
 
-type DemoStep = 'upload' | 'processing' | 'review' | 'playing' | 'showcase';
+type DemoStep = 'upload' | 'importing' | 'processing' | 'review' | 'playing' | 'showcase';
 
 const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
     const [step, setStep] = useState<DemoStep>('upload');
@@ -78,8 +76,12 @@ const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     
+    // Import Simulation State
+    const [importProgress, setImportProgress] = useState(0);
+    const [importStatus, setImportStatus] = useState('');
+    
     const [completedSteps, setCompletedSteps] = useState<string[]>([]);
-    const [generatedData, setGeneratedData] = useState<(GeneratedData & { images: string[] }) | null>(null);
+    const [generatedData, setGeneratedData] = useState<GeneratedData | null>(null);
     const [narration, setNarration] = useState<{ buffer: AudioBuffer; context: AudioContext } | null>(null);
 
     const [isPlaying, setIsPlaying] = useState(true);
@@ -201,10 +203,25 @@ const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
 
         try {
             // Step 1: Story
-            const payloads = await Promise.all(selectedFiles.map(sf => fileToPayload(sf.file)));
-            const storyData = await createDemoStoryFromImages(payloads);
+            // Check if files are mock files (size 0) or real
+            const isMock = selectedFiles.some(f => f.file.size === 0);
+            
+            let storyData;
+            if (isMock) {
+                // Use pre-canned data for the mock "Google Photos" import
+                 storyData = {
+                    title: "The Road Less Traveled",
+                    story: "We chased the horizon until the sun dipped low, painting the sky in hues of fire and gold. The mountains stood as silent giants witnessing our journey. Every turn revealed a new wonder, a fresh breath of freedom that only the open road can offer.",
+                    tags: { location: ["Mountains", "Highway 1", "California"], people: ["Friends"], activities: ["Road Trip", "Sunset"] }
+                };
+                await new Promise(r => setTimeout(r, 2000)); // Simulate thinking
+            } else {
+                const payloads = await Promise.all(selectedFiles.map(sf => fileToPayload(sf.file)));
+                storyData = await createDemoStoryFromImages(payloads);
+            }
+            
             setCompletedSteps(['analyze', 'story']);
-            setGeneratedData({ ...storyData, images: selectedFiles.map(f => f.preview) });
+            setGeneratedData(storyData);
             setEditedTitle(storyData.title);
             setEditedStory(storyData.story);
 
@@ -280,42 +297,47 @@ const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
         setStep('playing');
     };
 
-    const startExample = async () => {
+    // New: Simulate Google Photos Import
+    const startGooglePhotosSimulation = async () => {
+        setStep('importing');
+        setImportProgress(0);
+        setImportStatus('Connecting to Google Photos...');
+
+        await new Promise(r => setTimeout(r, 1000));
+        setImportProgress(30);
+        setImportStatus('Scanning timeline for recent events...');
+
+        await new Promise(r => setTimeout(r, 1500));
+        setImportProgress(60);
+        setImportStatus("Found 'Summer Roadtrip 2024' (8 photos)...");
+        
+        await new Promise(r => setTimeout(r, 1000));
+        setImportProgress(100);
+        setImportStatus('Importing photos...');
+
+        await new Promise(r => setTimeout(r, 800));
+
+        // Load Mock Data
         const exampleImages = [
             'https://images.pexels.com/photos/167699/pexels-photo-167699.jpeg',
             'https://images.pexels.com/photos/3408744/pexels-photo-3408744.jpeg',
             'https://images.pexels.com/photos/572897/pexels-photo-572897.jpeg',
             'https://images.pexels.com/photos/2422915/pexels-photo-2422915.jpeg',
-            'https://images.pexels.com/photos/3225517/pexels-photo-3225517.jpeg'
+            'https://images.pexels.com/photos/3225517/pexels-photo-3225517.jpeg',
+            'https://images.pexels.com/photos/1252983/pexels-photo-1252983.jpeg?auto=compress&cs=tinysrgb&w=400',
+            'https://images.pexels.com/photos/1382734/pexels-photo-1382734.jpeg?auto=compress&cs=tinysrgb&w=400',
+            'https://images.pexels.com/photos/3363357/pexels-photo-3363357.jpeg?auto=compress&cs=tinysrgb&w=400',
         ];
-        const exampleData: GeneratedData = {
-            title: "Whispers of the Wild",
-            story: "A journey through misty forests and across silent waters. We watched the northern lights dance in the sky, a spectacle of color against the dark canvas of night. Each moment was a breath of fresh air, a quiet reflection on nature's grandeur.",
-            tags: { location: ["Forest", "Mountains", "Coastal"], people: [], activities: ["Hiking", "Stargazing", "Reflection"] }
-        };
 
         setSelectedFiles(exampleImages.map((url, i) => ({
             id: `example-${i}`,
-            file: new File([], ""),
+            file: new File([], ""), // Mock file
             preview: url
         })));
         setHeaderId('example-0');
-        setGeneratedData({ ...exampleData, images: exampleImages });
-        setEditedTitle(exampleData.title);
-        setEditedStory(exampleData.story);
         
-        setStep('processing');
-        setCompletedSteps([]);
-
-        await new Promise(r => setTimeout(r, 500));
-        setCompletedSteps(['analyze', 'story']);
-        
-        await new Promise(r => setTimeout(r, 1000));
-        await handleGenerateNarration(exampleData.story, selectedVoice);
-        setCompletedSteps(['analyze', 'story', 'narration']);
-
-        await new Promise(r => setTimeout(r, 500));
-        setStep('review');
+        // Auto-proceed to generation
+        handleGenerate();
     };
 
     
@@ -362,10 +384,10 @@ const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
     useEffect(() => {
         if (step === 'showcase') {
             const timers = [
-                setTimeout(() => setShowcaseStep(1), 1000), // Show tags
-                setTimeout(() => setShowcaseStep(2), 3000), // Show timeline
-                setTimeout(() => setShowcaseStep(3), 5000), // Show curation
-                setTimeout(() => setShowcaseStep(4), 7000), // Show CTA
+                setTimeout(() => setShowcaseStep(1), 500), // Show tags
+                setTimeout(() => setShowcaseStep(2), 1500), // Show timeline
+                setTimeout(() => setShowcaseStep(3), 2500), // Show curation
+                setTimeout(() => setShowcaseStep(4), 4000), // Show CTA
             ];
             return () => timers.forEach(clearTimeout);
         }
@@ -373,99 +395,115 @@ const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
 
 
     const renderUpload = () => (
-        <div className="w-full max-w-2xl text-center animate-fade-in-up">
+        <div className="w-full max-w-4xl text-center animate-fade-in-up">
             <Sparkles className="w-12 h-12 text-cyan-400 mx-auto mb-4" />
-            <h1 className="text-4xl font-bold text-white font-brand">Try a Live Demo</h1>
-            <p className="text-slate-300 mt-2 mb-6">Upload 5-10 of your favorite photos and watch æterny turn them into a narrated story.</p>
-            <div
-                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
-                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onDrop={handleDrop}
-                className={`relative border-2 border-dashed rounded-lg p-6 transition-colors min-h-[200px] ${isDragging ? 'border-cyan-400 bg-cyan-900/20' : 'border-gray-600'}`}
-            >
-                {selectedFiles.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-slate-400 pointer-events-none">
-                        <UploadCloud className="w-10 h-10 mb-2" />
-                        <p>Drag & drop photos here</p>
-                        <p className="text-sm">or</p>
-                        <label htmlFor="demo-upload" className="font-semibold text-cyan-400 hover:underline cursor-pointer pointer-events-auto">browse your files</label>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-5 gap-2">
-                        {selectedFiles.map((file) => (
-                            <div key={file.id} className="relative aspect-square group">
-                                <img src={file.preview} alt={file.file.name} className="w-full h-full object-cover rounded-md" />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                                    <button onClick={() => handleSetHeader(file.id)} className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center" title="Set as header"><Star size={14} fill={headerId === file.id ? 'currentColor' : 'none'} /></button>
-                                    <button onClick={() => handleRemoveFile(file.id)} className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center" title="Remove"><X size={14} /></button>
-                                </div>
-                                {headerId === file.id && <div className="absolute top-1 left-1 bg-cyan-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">HEADER</div>}
-                            </div>
-                        ))}
-                        {selectedFiles.length < 10 && <label htmlFor="demo-upload" className="flex aspect-square items-center justify-center border-2 border-dashed border-slate-600 rounded-md cursor-pointer text-slate-400 hover:bg-slate-700/50 hover:border-slate-500 text-2xl">+</label>}
-                    </div>
-                )}
-                <input id="demo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
-            </div>
-            {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
+            <h1 className="text-4xl font-bold text-white font-brand">Experience the Magic</h1>
+            <p className="text-slate-300 mt-2 mb-10 text-lg">See how æterny transforms scattered photos into a cohesive, narrated story in seconds.</p>
             
-            {selectedFiles.length > 0 ? (
-                <>
-                    <button onClick={handleGenerate} disabled={selectedFiles.length < 5 || selectedFiles.length > 10} className="mt-6 bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-3 px-8 rounded-full text-lg transition-all transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed">
-                        Generate My Story
-                    </button>
-                    <p className="text-xs text-slate-500 mt-2">Please upload between 5 and 10 photos.</p>
-                </>
-            ) : (
-                <>
-                    <div className="relative my-6">
-                        <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t border-slate-700" /></div>
-                        <div className="relative flex justify-center text-sm"><span className="bg-slate-900/95 px-2 text-slate-400">Or</span></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Option 1: Fast Track */}
+                <button 
+                    onClick={startGooglePhotosSimulation}
+                    className="bg-slate-800/80 hover:bg-slate-700/80 border-2 border-transparent hover:border-cyan-500/50 rounded-2xl p-8 transition-all group relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 bg-cyan-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">Fastest</div>
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                        <GoogleIcon className="w-8 h-8" />
                     </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Simulate Google Photos Import</h3>
+                    <p className="text-slate-400 text-sm">We'll simulate finding a "Summer Trip" album and import 8 photos instantly.</p>
+                    <div className="mt-6 flex items-center justify-center gap-2 text-cyan-400 font-bold text-sm group-hover:gap-3 transition-all">
+                        Start Demo <ArrowRight className="w-4 h-4"/>
+                    </div>
+                </button>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <button onClick={startExample} className="w-full bg-slate-700/80 hover:bg-slate-700 p-4 rounded-lg ring-1 ring-white/10 flex items-center justify-center gap-3 transition-colors">
-                            <Wand2 className="w-5 h-5" />
-                            <span className="font-semibold">Use Sample Photos</span>
-                        </button>
-                        <Tooltip text="Coming Soon!">
-                            <button disabled className="w-full bg-slate-700/50 p-4 rounded-lg ring-1 ring-white/10 flex items-center justify-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <GooglePhotosIcon className="w-6 h-6" />
-                                <span className="font-semibold">Google Photos</span>
+                {/* Option 2: Manual Upload */}
+                <div
+                    onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+                    onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-2xl p-8 transition-colors flex flex-col items-center justify-center ${isDragging ? 'border-cyan-400 bg-cyan-900/20' : 'border-slate-600 bg-transparent hover:bg-white/5'}`}
+                >
+                     {selectedFiles.length === 0 ? (
+                        <>
+                            <div className="w-16 h-16 bg-slate-700 rounded-full flex items-center justify-center mb-6">
+                                <UploadCloud className="w-8 h-8 text-slate-300" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">Upload Your Own</h3>
+                            <p className="text-slate-400 text-sm mb-6">Drag & drop 5-10 photos to see them transformed.</p>
+                            <label htmlFor="demo-upload" className="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-full text-sm cursor-pointer transition-colors">
+                                Select Files
+                            </label>
+                             <input id="demo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                        </>
+                    ) : (
+                        <div className="w-full">
+                            <div className="grid grid-cols-5 gap-2 mb-6">
+                                {selectedFiles.map((file) => (
+                                    <div key={file.id} className="relative aspect-square group">
+                                        <img src={file.preview} className="w-full h-full object-cover rounded-md" />
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                                            <button onClick={() => handleRemoveFile(file.id)} className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center" title="Remove"><X size={14} /></button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {selectedFiles.length < 10 && <label htmlFor="demo-upload-add" className="flex aspect-square items-center justify-center border-2 border-dashed border-slate-600 rounded-md cursor-pointer text-slate-400 hover:bg-slate-700/50 hover:border-slate-500 text-2xl">+</label>}
+                                <input id="demo-upload-add" type="file" multiple accept="image/*" className="hidden" onChange={handleFileSelect} />
+                            </div>
+                            <button onClick={handleGenerate} disabled={selectedFiles.length < 5} className="w-full bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-3 px-8 rounded-full text-lg transition-all disabled:bg-gray-600 disabled:cursor-not-allowed">
+                                Generate My Story
                             </button>
-                        </Tooltip>
-                        <Tooltip text="Coming Soon!">
-                            <button disabled className="w-full bg-slate-700/50 p-4 rounded-lg ring-1 ring-white/10 flex items-center justify-center gap-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <ApplePhotosIcon className="w-5 h-5" />
-                                <span className="font-semibold">Apple Photos</span>
-                            </button>
-                        </Tooltip>
-                    </div>
-                </>
-            )}
+                            {selectedFiles.length < 5 && <p className="text-xs text-red-400 mt-2">Please add {5 - selectedFiles.length} more photos.</p>}
+                        </div>
+                    )}
+                </div>
+            </div>
+            
+            {error && <p className="text-red-400 mt-8 text-sm bg-red-900/20 p-2 rounded-lg inline-block">{error}</p>}
         </div>
     );
     
+    const renderImporting = () => (
+         <div className="w-full max-w-md text-center animate-fade-in">
+            <div className="relative w-24 h-24 mx-auto mb-8">
+                 <svg className="w-full h-full" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" strokeWidth="8" />
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#06b6d4" strokeWidth="8" strokeDasharray="283" strokeDashoffset={283 - (283 * importProgress / 100)} className="transition-all duration-300 ease-linear" transform="rotate(-90 50 50)" />
+                 </svg>
+                 <div className="absolute inset-0 flex items-center justify-center">
+                     <GoogleIcon className="w-10 h-10" />
+                 </div>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">{importStatus}</h2>
+            <p className="text-slate-400 text-sm font-mono">{importProgress}%</p>
+         </div>
+    );
+
     const renderProcessing = () => {
         const currentStepIndex = completedSteps.length;
         return (
             <div className="text-center animate-fade-in w-full max-w-md">
-                <h1 className="text-3xl font-bold font-brand mb-6">æterny is curating...</h1>
-                <div className="space-y-3 text-left">
+                <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-8 ring-1 ring-cyan-500/30">
+                    <Sparkles className="w-10 h-10 text-cyan-400 animate-pulse" />
+                </div>
+                <h1 className="text-3xl font-bold font-brand mb-8 text-white">æterny is creating...</h1>
+                <div className="space-y-4 text-left bg-slate-800/50 p-6 rounded-2xl border border-white/5">
                     {processingSteps.map((step, index) => {
                         const isCompleted = completedSteps.includes(step.id);
                         const isCurrent = index === currentStepIndex && index < processingSteps.length;
                         return (
-                            <div key={step.id} className={`flex items-center gap-3 transition-opacity duration-500 ${!isCompleted && !isCurrent ? 'opacity-40' : 'opacity-100'}`}>
+                            <div key={step.id} className={`flex items-center gap-4 transition-all duration-500 ${!isCompleted && !isCurrent ? 'opacity-30 blur-[1px]' : 'opacity-100'}`}>
                                 {isCompleted ? (
-                                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center ring-1 ring-green-500/50">
+                                        <CheckCircle className="w-4 h-4 text-green-400" />
+                                    </div>
                                 ) : isCurrent ? (
-                                    <Loader2 className="w-5 h-5 text-cyan-400 animate-spin flex-shrink-0" />
+                                    <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
                                 ) : (
-                                    <div className="w-5 h-5 flex-shrink-0 border-2 border-slate-600 rounded-full" />
+                                    <div className="w-6 h-6 rounded-full border-2 border-slate-600" />
                                 )}
-                                <span className={`${isCurrent ? 'text-white font-semibold' : 'text-slate-400'}`}>{step.text}</span>
+                                <span className={`text-sm ${isCurrent ? 'text-white font-bold' : 'text-slate-300'}`}>{step.text}</span>
                             </div>
                         );
                     })}
@@ -475,49 +513,50 @@ const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
     };
     
     const renderReview = () => {
-        const headerImage = selectedFiles.find(f => f.id === headerId)?.preview;
+        const headerImage = selectedFiles.find(f => f.id === headerId)?.preview || selectedFiles[0]?.preview;
         return (
-            <div className="w-full max-w-5xl animate-fade-in-up grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="flex flex-col items-center justify-center">
-                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden ring-1 ring-white/10 shadow-lg">
+            <div className="w-full max-w-5xl animate-fade-in-up grid grid-cols-1 lg:grid-cols-2 gap-8 h-[80vh]">
+                <div className="flex flex-col justify-center">
+                    <div className="w-full aspect-[4/3] bg-black rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-2xl relative group">
                         {headerImage ? (
                             <img src={headerImage} alt="Story header" className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Header image will appear here.</div>
+                            <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Header image</div>
                         )}
+                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                             <h3 className="text-white font-bold text-xl font-brand">{editedTitle}</h3>
+                        </div>
                     </div>
-                    <p className="text-sm text-slate-400 mt-2">This is your header image.</p>
                 </div>
-                <div className="bg-slate-800/50 p-6 rounded-2xl ring-1 ring-white/10 flex flex-col">
-                    <h2 className="text-2xl font-bold font-brand mb-4">Review Your Story</h2>
-                    <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+                <div className="bg-slate-800/50 p-8 rounded-2xl ring-1 ring-white/10 flex flex-col h-full border-l-4 border-cyan-500">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold font-brand mb-1 text-white">Review Draft</h2>
+                        <p className="text-slate-400 text-sm">æterny wrote this story based on your photos.</p>
+                    </div>
+                    
+                    <div className="flex-grow overflow-y-auto pr-2 space-y-6">
                         <div>
-                            <label className="text-sm font-semibold text-slate-400">Title</label>
-                            <input value={editedTitle} onChange={e => setEditedTitle(e.target.value)} className="w-full bg-slate-700/50 p-2 rounded-md mt-1 text-lg font-bold" />
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Story Narrative</label>
+                            <textarea value={editedStory} onChange={e => setEditedStory(e.target.value)} rows={8} className="w-full bg-slate-900/50 border border-white/10 p-4 rounded-xl mt-2 text-base text-slate-200 leading-relaxed font-serif focus:ring-2 focus:ring-cyan-500/50 outline-none resize-none" />
                         </div>
                         <div>
-                            <label className="text-sm font-semibold text-slate-400">Story</label>
-                            <textarea value={editedStory} onChange={e => setEditedStory(e.target.value)} rows={5} className="w-full bg-slate-700/50 p-2 rounded-md mt-1 text-sm whitespace-pre-wrap" />
-                        </div>
-                        <div>
-                            <label className="text-sm font-semibold text-slate-400">Narrator Voice</label>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Voice Persona</label>
+                            <div className="grid grid-cols-1 gap-2">
                                 {voiceOptions.map(opt => (
-                                    <button key={opt.voice} onClick={() => setSelectedVoice(opt.voice)} className={`p-3 rounded-lg border-2 text-left transition-colors ${selectedVoice === opt.voice ? 'border-cyan-500 bg-cyan-500/10' : 'border-gray-600 hover:border-gray-500'}`}>
-                                        <div className="flex items-center justify-between">
-                                            <p className="font-semibold text-sm">{opt.name}</p>
-                                            <button onClick={(e) => { e.stopPropagation(); handleVoiceSample(opt.voice); }} className="text-slate-400 hover:text-cyan-400">
-                                                {playingVoice === opt.voice ? <Speaker className="w-4 h-4 animate-pulse" /> : <Play className="w-4 h-4" />}
-                                            </button>
-                                        </div>
+                                    <button key={opt.voice} onClick={() => setSelectedVoice(opt.voice)} className={`p-3 rounded-lg border flex items-center justify-between transition-all ${selectedVoice === opt.voice ? 'border-cyan-500 bg-cyan-500/10' : 'border-white/5 hover:bg-white/5'}`}>
+                                        <span className="font-semibold text-sm text-white">{opt.name}</span>
+                                        <button onClick={(e) => { e.stopPropagation(); handleVoiceSample(opt.voice); }} className="text-slate-400 hover:text-cyan-400 p-1">
+                                            {playingVoice === opt.voice ? <Speaker className="w-4 h-4 animate-pulse text-cyan-400" /> : <Play className="w-4 h-4" />}
+                                        </button>
                                     </button>
                                 ))}
                             </div>
                         </div>
                     </div>
-                    <div className="mt-auto pt-4 flex justify-end">
-                        <button onClick={handleContinueToSlideshow} className="bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-2 px-6 rounded-full text-base transition-all transform hover:scale-105">
-                            Finalize & Play Story
+                    <div className="mt-6 pt-6 border-t border-white/10 flex justify-between items-center">
+                         <button onClick={() => setStep('upload')} className="text-slate-400 hover:text-white text-sm font-semibold flex items-center gap-2"><RefreshCw className="w-4 h-4"/> Start Over</button>
+                        <button onClick={handleContinueToSlideshow} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 px-8 rounded-full text-base transition-all transform hover:scale-105 shadow-lg shadow-cyan-900/20">
+                            Play Experience
                         </button>
                     </div>
                 </div>
@@ -527,66 +566,71 @@ const ProductDemo: React.FC<ProductDemoProps> = ({ onClose, onComplete }) => {
 
     const renderPlaying = () => (
         <div className="w-full h-full flex flex-col items-center justify-center">
-            <div className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden">
-                {generatedData && <Slideshow images={generatedData.images} isPlaying={isPlaying} />}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                <div className="absolute bottom-8 left-8 right-8 text-center text-white text-xl font-semibold" style={{ textShadow: '0 1px 5px rgba(0,0,0,0.8)' }}>
-                    {currentSentenceIndex > -1 && <p className="animate-fade-in">{sentences[currentSentenceIndex]?.text}</p>}
+            <div className="relative w-full max-w-5xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                <Slideshow images={selectedFiles.map(f => f.preview)} isPlaying={isPlaying} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40 pointer-events-none"></div>
+                
+                {/* Subtitles */}
+                <div className="absolute bottom-12 left-12 right-12 text-center">
+                     <p className="text-white/90 text-2xl md:text-3xl font-medium leading-relaxed drop-shadow-xl animate-fade-in font-serif">
+                        {currentSentenceIndex > -1 ? sentences[currentSentenceIndex]?.text : "..."}
+                    </p>
+                </div>
+
+                <div className="absolute top-8 left-8">
+                     <h2 className="text-white/80 font-brand font-bold text-lg tracking-wide uppercase">{generatedData?.title}</h2>
                 </div>
             </div>
-             <p className="text-2xl font-bold text-white font-brand mt-4">{generatedData?.title}</p>
+            <p className="text-slate-500 mt-6 text-sm animate-pulse">Playing generated memory...</p>
         </div>
     );
     
     const renderShowcase = () => (
-        <div className="w-full max-w-5xl mx-auto text-center animate-fade-in-up">
-            <h2 className="text-4xl font-bold text-white font-brand">Your Story is Ready.</h2>
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className={`transition-opacity duration-700 ${showcaseStep >= 1 ? 'opacity-100' : 'opacity-0'}`}>
-                    <h3 className="text-lg font-semibold text-cyan-400 mb-2 flex items-center justify-center gap-2"><Tag/> Tags</h3>
-                    <div className="bg-slate-800/50 p-4 rounded-lg space-y-2">
-                        <div className="flex flex-wrap gap-2 justify-center">
-                            {generatedData?.tags.location.map(t => <span key={t} className="flex items-center gap-1 text-xs bg-gray-700 px-2 py-1 rounded-full"><MapPin size={12}/>{t}</span>)}
-                            {generatedData?.tags.people.map(t => <span key={t} className="flex items-center gap-1 text-xs bg-gray-700 px-2 py-1 rounded-full"><Users size={12}/>{t}</span>)}
-                            {generatedData?.tags.activities.map(t => <span key={t} className="flex items-center gap-1 text-xs bg-gray-700 px-2 py-1 rounded-full"><CheckCircle size={12}/>{t}</span>)}
-                        </div>
-                        <p className="text-xs text-slate-500">æterny automatically finds details in your memories.</p>
-                    </div>
+        <div className="w-full max-w-6xl mx-auto text-center animate-fade-in-up flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="mb-12">
+                 <div className="w-24 h-24 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(6,182,212,0.4)] animate-pulse">
+                    <CheckCircle className="w-12 h-12 text-white" />
                 </div>
-                <div className={`transition-opacity duration-700 ${showcaseStep >= 2 ? 'opacity-100' : 'opacity-0'}`}>
-                     <h3 className="text-lg font-semibold text-cyan-400 mb-2 flex items-center justify-center gap-2"><GitBranch/> Timeline</h3>
-                     <div className="bg-slate-800/50 p-4 rounded-lg">
-                        <div className="relative w-full h-24 flex items-center justify-center">
-                            <div className="w-0.5 h-full bg-slate-600 absolute left-1/2 -translate-x-1/2"></div>
-                            <div className="w-4 h-4 rounded-full bg-cyan-400 ring-4 ring-slate-800 z-10"></div>
-                        </div>
-                         <p className="text-xs text-slate-500">Each story becomes a new entry in your personal timestream.</p>
-                     </div>
+                <h2 className="text-5xl font-bold text-white font-brand mb-4">Magic, isn't it?</h2>
+                <p className="text-xl text-slate-300 max-w-2xl mx-auto">This is exactly what æterny will do for every memory in your collection.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-12">
+                <div className={`transition-all duration-700 delay-100 transform ${showcaseStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} bg-slate-800/40 p-6 rounded-2xl border border-white/5`}>
+                    <Tag className="w-8 h-8 text-cyan-400 mx-auto mb-3"/>
+                    <h3 className="text-lg font-bold text-white">Auto-Tagged</h3>
+                    <p className="text-slate-400 text-sm mt-2">People, places, and emotions organized automatically.</p>
                 </div>
-                <div className={`transition-opacity duration-700 ${showcaseStep >= 3 ? 'opacity-100' : 'opacity-0'}`}>
-                     <h3 className="text-lg font-semibold text-cyan-400 mb-2 flex items-center justify-center gap-2"><Wand2/> Curation</h3>
-                     <div className="bg-slate-800/50 p-4 rounded-lg">
-                        <img src={selectedFiles[0]?.preview} alt="" className="w-full h-24 object-cover rounded-md opacity-75"/>
-                        <p className="text-xs text-slate-500 mt-2">Enhance photos, rewrite stories, and perfect every detail.</p>
-                     </div>
+                <div className={`transition-all duration-700 delay-300 transform ${showcaseStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} bg-slate-800/40 p-6 rounded-2xl border border-white/5`}>
+                    <GitBranch className="w-8 h-8 text-cyan-400 mx-auto mb-3"/>
+                    <h3 className="text-lg font-bold text-white">Timeline Ready</h3>
+                    <p className="text-slate-400 text-sm mt-2">Placed perfectly in your chronological life stream.</p>
+                </div>
+                <div className={`transition-all duration-700 delay-500 transform ${showcaseStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} bg-slate-800/40 p-6 rounded-2xl border border-white/5`}>
+                    <Wand2 className="w-8 h-8 text-cyan-400 mx-auto mb-3"/>
+                    <h3 className="text-lg font-bold text-white">Narrated</h3>
+                    <p className="text-slate-400 text-sm mt-2">Ready to be watched, shared, or passed down.</p>
                 </div>
             </div>
-             <div className={`mt-12 transition-all duration-700 ${showcaseStep >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                <h2 className="text-3xl font-bold font-brand text-white">Save your first memory and continue your journey.</h2>
-                <button onClick={handleSignUp} className="mt-6 bg-cyan-500 hover:bg-cyan-400 text-white font-bold py-3 px-8 rounded-full text-lg transition-all transform hover:scale-105">
-                    Sign Up to Save Your Story <ArrowRight className="inline w-5 h-5 ml-2"/>
+            
+             <div className={`transition-all duration-700 delay-700 ${showcaseStep >= 4 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
+                <p className="text-slate-300 mb-6 text-lg">Want to import your last year?</p>
+                <button onClick={handleSignUp} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-4 px-12 rounded-full text-xl transition-all transform hover:scale-105 shadow-xl shadow-cyan-900/30 flex items-center gap-3">
+                    Import & Sign Up <ArrowRight className="w-6 h-6"/>
                 </button>
+                <p className="text-xs text-slate-500 mt-4">This memory will be waiting for you in your new account.</p>
              </div>
         </div>
     );
 
     return (
-        <div className="fixed inset-0 bg-slate-900/95 z-[100] p-4 py-12 overflow-y-auto" onClick={onClose}>
-            <button onClick={onClose} className="fixed top-6 right-6 text-slate-500 hover:text-white transition-colors z-[110]">
+        <div className="fixed inset-0 bg-slate-950 z-[100] p-4 py-12 overflow-y-auto" onClick={onClose}>
+            <button onClick={onClose} className="fixed top-6 right-6 text-slate-500 hover:text-white transition-colors z-[110] bg-slate-900/50 p-2 rounded-full hover:bg-slate-800">
                 <X size={24} />
             </button>
             <div className="min-h-full w-full flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
                 {step === 'upload' && renderUpload()}
+                {step === 'importing' && renderImporting()}
                 {step === 'processing' && renderProcessing()}
                 {step === 'review' && renderReview()}
                 {step === 'playing' && renderPlaying()}

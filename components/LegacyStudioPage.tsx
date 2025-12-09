@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Page, UserTier, Moment, Journey } from '../types';
 import { Lock, Clock, Mic, BookOpen, ShieldCheck, Users, Wand2, BookImage, Headset, BrainCircuit } from 'lucide-react';
@@ -133,6 +134,7 @@ const LegacyDashboard: React.FC<{
                             onPinToggle={() => {}} 
                             onShare={() => {}}
                             onNavigate={onNavigate}
+                            zoomLevel={2}
                         />
                     </section>
                 )}
